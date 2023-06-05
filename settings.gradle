@@ -1,0 +1,10 @@
+rootProject.name = 'firstreply-java-api'
+
+include 'api'
+include 'client'
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
