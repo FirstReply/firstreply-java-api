@@ -12,8 +12,11 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -22,6 +25,7 @@ public class FirstReplyService {
     private static final String DEFAULT_BASE_URL = "https://api.firstreply.ai/";
     private static final String BASE_URL_ENV_VAR = "FIRSTREPLY_API_URL";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Set<String> LOOPBACK_HOSTS = Set.of("localhost", "127.0.0.1", "::1", "[::1]");
 
     private final FirstReplyApi api;
     private final String organizationId;
@@ -57,8 +61,17 @@ public class FirstReplyService {
      * @param timeout        HTTP read timeout
      */
     public FirstReplyService(final String token, final String organizationId, final String baseUrl, final Duration timeout) {
-        OkHttpClient client = defaultClient(token, timeout);
-        Retrofit retrofit = defaultRetrofit(client, defaultObjectMapper(), baseUrl);
+        this(new DefaultTokenStore(token, null), organizationId, baseUrl, timeout);
+    }
+
+    /**
+     * Creates a FirstReplyService backed by a {@link TokenStore}, enabling automatic token refresh
+     * on 401 when the store is configured with a refresh function (see {@link DefaultTokenStore}).
+     */
+    public FirstReplyService(final TokenStore tokenStore, final String organizationId, final String baseUrl, final Duration timeout) {
+        String validatedBaseUrl = requireSecureBaseUrl(baseUrl);
+        OkHttpClient client = defaultClient(tokenStore, timeout);
+        Retrofit retrofit = defaultRetrofit(client, defaultObjectMapper(), validatedBaseUrl);
 
         this.organizationId = organizationId;
         this.api = retrofit.create(FirstReplyApi.class);
@@ -231,7 +244,7 @@ public class FirstReplyService {
     public static FirstReplyApi buildApi(String token, String baseUrl, Duration timeout) {
         ObjectMapper mapper = defaultObjectMapper();
         OkHttpClient client = defaultClient(token, timeout);
-        return defaultRetrofit(client, mapper, baseUrl).create(FirstReplyApi.class);
+        return defaultRetrofit(client, mapper, requireSecureBaseUrl(baseUrl)).create(FirstReplyApi.class);
     }
 
     public static ObjectMapper defaultObjectMapper() {
@@ -242,8 +255,19 @@ public class FirstReplyService {
     }
 
     public static OkHttpClient defaultClient(String token, Duration timeout) {
+        return defaultClient(new DefaultTokenStore(token, null), timeout);
+    }
+
+    /**
+     * Builds the default OkHttp client with auth, retry, and (when the store supports it)
+     * automatic token refresh on 401. The retry interceptor uses safe defaults
+     * (3 attempts, exponential backoff up to 30s) and only retries idempotent methods.
+     */
+    public static OkHttpClient defaultClient(TokenStore tokenStore, Duration timeout) {
         return new OkHttpClient.Builder()
-                .addInterceptor(new AuthenticationInterceptor(token))
+                .addInterceptor(new AuthenticationInterceptor(tokenStore))
+                .addInterceptor(new RetryInterceptor())
+                .authenticator(new RefreshAuthenticator(tokenStore))
                 .connectionPool(new ConnectionPool(5, 30, TimeUnit.SECONDS))
                 .readTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                 .build();
@@ -255,7 +279,7 @@ public class FirstReplyService {
 
     public static Retrofit defaultRetrofit(OkHttpClient client, ObjectMapper mapper, String baseUrl) {
         return new Retrofit.Builder()
-                .baseUrl(baseUrl)
+                .baseUrl(requireSecureBaseUrl(baseUrl))
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create(mapper))
                 .addCallAdapterFactory(RxJava3CallAdapterFactory.create())
@@ -264,10 +288,41 @@ public class FirstReplyService {
 
     /**
      * Returns the base URL to use: checks the {@code FIRSTREPLY_API_URL} environment variable
-     * first, falling back to the default production URL.
+     * first, falling back to the default production URL. Validates HTTPS.
      */
     public static String resolveBaseUrl() {
         String envUrl = System.getenv(BASE_URL_ENV_VAR);
-        return (envUrl != null && !envUrl.isEmpty()) ? envUrl : DEFAULT_BASE_URL;
+        return requireSecureBaseUrl((envUrl != null && !envUrl.isEmpty()) ? envUrl : DEFAULT_BASE_URL);
+    }
+
+    /**
+     * Enforces HTTPS for the API base URL. {@code http://} is permitted only for loopback hosts
+     * (localhost, 127.0.0.1, ::1) so local development against a proxy still works. Any other
+     * non-HTTPS scheme is rejected to prevent token interception over plaintext.
+     *
+     * @throws IllegalArgumentException if the URL is null, empty, malformed, or not HTTPS
+     */
+    static String requireSecureBaseUrl(String baseUrl) {
+        if (baseUrl == null || baseUrl.isEmpty()) {
+            throw new IllegalArgumentException("baseUrl must not be null or empty");
+        }
+        URI uri;
+        try {
+            uri = new URI(baseUrl);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("baseUrl is not a valid URI: " + baseUrl, e);
+        }
+        String scheme = uri.getScheme();
+        if (scheme == null) {
+            throw new IllegalArgumentException("baseUrl must include a scheme (https://): " + baseUrl);
+        }
+        if ("https".equalsIgnoreCase(scheme)) {
+            return baseUrl;
+        }
+        if ("http".equalsIgnoreCase(scheme) && uri.getHost() != null && LOOPBACK_HOSTS.contains(uri.getHost().toLowerCase())) {
+            return baseUrl;
+        }
+        throw new IllegalArgumentException(
+                "baseUrl must use HTTPS (http:// is only allowed for loopback hosts): " + baseUrl);
     }
 }
