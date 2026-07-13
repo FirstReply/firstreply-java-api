@@ -24,5 +24,11 @@ public class Contact {
 
     private String description;
 
+    private String whatsappPhone;
+    private String messengerUserId;
+    private String instagramUserId;
+    private String linkedinUserId;
+    private String platformMetadata;
+
     private List<ContactFieldValue> fields;
 }

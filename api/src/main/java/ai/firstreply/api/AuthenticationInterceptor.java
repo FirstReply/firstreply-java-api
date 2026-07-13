@@ -7,22 +7,32 @@ import okhttp3.Response;
 import java.io.IOException;
 
 /**
- * OkHttp Interceptor that adds an authorization token header
+ * OkHttp interceptor that adds a {@code Authorization: Bearer <token>} header to every request.
+ *
+ * <p>Backed by a {@link TokenStore}, so the token can be refreshed at runtime (e.g. by
+ * {@link RefreshAuthenticator} after a 401) without rebuilding the OkHttp client. Each request
+ * reads the current token from the store, ensuring concurrent requests pick up refreshes
+ * immediately.
  */
 public class AuthenticationInterceptor implements Interceptor {
 
-    private final String token;
+    private final TokenStore tokenStore;
 
-    AuthenticationInterceptor(String token) {
-        this.token = token;
+    public AuthenticationInterceptor(String token) {
+        this(new DefaultTokenStore(token, null));
+    }
+
+    public AuthenticationInterceptor(TokenStore tokenStore) {
+        this.tokenStore = tokenStore;
     }
 
     @Override
     public Response intercept(Chain chain) throws IOException {
-        Request request = chain.request()
-                .newBuilder()
-                .header("Authorization", "Bearer " + token)
-                .build();
-        return chain.proceed(request);
+        Request.Builder builder = chain.request().newBuilder();
+        String token = tokenStore.getToken();
+        if (token != null && !token.isEmpty()) {
+            builder.header("Authorization", "Bearer " + token);
+        }
+        return chain.proceed(builder.build());
     }
 }
