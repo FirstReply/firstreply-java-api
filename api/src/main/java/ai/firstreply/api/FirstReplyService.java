@@ -181,6 +181,24 @@ public class FirstReplyService {
         return execute(api.searchOrganizations(params));
     }
 
+    // ── API Keys ──────────────────────────────────────────────────────────
+
+    public ApiKeyList listApiKeys(int page, int limit) {
+        return execute(api.listApiKeys(this.organizationId, page, limit));
+    }
+
+    /**
+     * Creates a new named API key. The returned {@link ApiKeySecret#getApiKey()}
+     * is the only time the plaintext key is exposed — store it immediately.
+     */
+    public ApiKeySecret createApiKey(ApiKeyCreate request) {
+        return execute(api.createApiKey(this.organizationId, request));
+    }
+
+    public void deleteApiKey(String apiKeyId) {
+        execute(api.deleteApiKey(this.organizationId, apiKeyId));
+    }
+
     // ── Authentication ────────────────────────────────────────────────────
 
     public AuthResponse login(LoginRequest request) {

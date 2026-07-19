@@ -16,7 +16,6 @@ public class Organization {
     private String language;
     private String description;
     private int color;
-    private String apiKey;
 
     private int numInboxes;
     private int numMembers;

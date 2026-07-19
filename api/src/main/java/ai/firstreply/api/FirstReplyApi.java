@@ -112,6 +112,24 @@ public interface FirstReplyApi {
     Single<OrganizationList> searchOrganizations(
             @Body OrganizationListParams params);
 
+    // ── API Keys ──────────────────────────────────────────────────────────
+
+    @GET("/v1/organizations/{organizationId}/apiKeys")
+    Single<ApiKeyList> listApiKeys(
+            @Path("organizationId") String organizationId,
+            @Query("page") int page,
+            @Query("limit") int limit);
+
+    @POST("/v1/organizations/{organizationId}/apiKeys")
+    Single<ApiKeySecret> createApiKey(
+            @Path("organizationId") String organizationId,
+            @Body ApiKeyCreate request);
+
+    @DELETE("/v1/organizations/{organizationId}/apiKeys/{id}")
+    Single<Void> deleteApiKey(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
     // ── Authentication ────────────────────────────────────────────────────
 
     @POST("/v1/auth/login")
