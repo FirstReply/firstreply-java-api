@@ -188,8 +188,9 @@ public class FirstReplyService {
     }
 
     /**
-     * Creates a new named API key. The returned {@link ApiKeySecret#getApiKey()}
-     * is the only time the plaintext key is exposed — store it immediately.
+     * Creates a new named API key. The {@code apiKey} field of the returned
+     * {@link ApiKeySecret} is the only time the plaintext key is exposed —
+     * store it immediately.
      */
     public ApiKeySecret createApiKey(ApiKeyCreate request) {
         return execute(api.createApiKey(this.organizationId, request));
