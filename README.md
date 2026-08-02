@@ -36,7 +36,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'ai.firstreply:firstreply-api:0.1.0'
+    implementation 'ai.firstreply:firstreply-api:0.1.1'
 }
 ```
 
@@ -53,7 +53,7 @@ dependencies {
 <dependency>
     <groupId>ai.firstreply</groupId>
     <artifactId>firstreply-api</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
@@ -63,7 +63,7 @@ dependencies {
 ./gradlew publishToMavenLocal
 ```
 
-Then depend on `ai.firstreply:firstreply-api:0.1.0` with `mavenLocal()` in
+Then depend on `ai.firstreply:firstreply-api:0.1.1` with `mavenLocal()` in
 your repositories.
 
 ## Authentication
