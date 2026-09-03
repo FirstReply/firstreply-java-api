@@ -1,8 +1,16 @@
+# This repository is a read-only mirror of packages/firstreply-java-api in
+# FirstReply/firstreply. Releases are cut there: pushing a java-api-vX.Y.Z tag
+# on the monorepo splits this subtree and pushes tag vX.Y.Z here, which is
+# what triggers the job below.
+#
+# The trigger is a tag push, not `release: published`. The monorepo pushes a
+# bare tag and never creates a GitHub Release, so a `release:` trigger would
+# never fire.
 name: Publish package
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -14,6 +22,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # Guard: the tag must match the version Gradle will publish.
+      - name: Verify tag matches VERSION_NAME
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(sed -n 's/^VERSION_NAME=//p' gradle.properties | tr -d '[:space:]')
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "Tag v$TAG_VERSION does not match gradle.properties VERSION_NAME $PKG_VERSION" >&2
+            exit 1
+          fi
 
       - uses: actions/setup-java@v5
         with:
