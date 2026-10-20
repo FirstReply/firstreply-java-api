@@ -12,23 +12,21 @@ import java.util.List;
 public class Contact {
     private String id;
     private String organizationId;
-
+    private long lastUpdate;
+    private long created;
     private String firstname;
     private String lastname;
-
     private String name;
     private String email;
-
     private String phone;
     private String imageUrl;
-
     private String description;
-
     private String whatsappPhone;
     private String messengerUserId;
     private String instagramUserId;
     private String linkedinUserId;
     private String platformMetadata;
-
     private List<ContactFieldValue> fields;
+    private Inbox inbox;
+    private int conversationCount;
 }

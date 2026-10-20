@@ -11,28 +11,29 @@ public class Conversation {
     private String id;
     private long lastUpdate;
     private long created;
-
     private Classification classification;
     private Contact contact;
     private OrganizationMember assignedMember;
-
     private String organizationId;
     private String classificationId;
+    private String classificationReason;
+    private Double classificationConfidence;
     private String contactId;
     private String assignedMemberId;
+    private long assignedAt;
+    private String assignedBy;
     private String lastMessageId;
     private String inboxId;
-
     private String subject;
     private String language;
-
     private int status;
     private int priority;
-
     private boolean aiReply;
     private boolean processed;
     private boolean spam;
-
     private Message lastMessage;
     private int messageCounter;
+    private boolean hasDraft;
+    private String searchSnippet;
+    private String searchMessageId;
 }

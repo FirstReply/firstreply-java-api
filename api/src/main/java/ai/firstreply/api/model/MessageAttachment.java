@@ -13,4 +13,5 @@ public class MessageAttachment {
     private int size;
     private String mime;
     private String file;
+    private String contentId;
 }

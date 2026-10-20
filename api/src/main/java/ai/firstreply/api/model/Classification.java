@@ -11,17 +11,18 @@ public class Classification {
     private String id;
     private Long lastUpdate;
     private Long created;
-
     private String organizationId;
     private String name;
     private String description;
     private int color;
-
     private boolean aiReply;
+    private boolean aiReplyDraft;
     private boolean sentimentAnalysis;
     private boolean autoClose;
-
     private String defaultMemberId;
+    private OrganizationMember defaultMember;
     private String promptId;
+    private Prompt prompt;
     private String templateId;
+    private Template template;
 }

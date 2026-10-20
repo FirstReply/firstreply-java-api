@@ -16,21 +16,19 @@ public class MessageCreate {
     private String messageHtml;
     private String language;
     private String translation;
-
-    private List<MessageAttachment> attachments;
-
     private boolean outgoing;
     private boolean positive = true;
+    private boolean draft;
+    private boolean internal;
     private int opened;
-    private long created;
-
     private MessageContact sender;
     private List<MessageContact> to;
     private List<MessageContact> cc;
     private List<MessageContact> bcc;
-
+    private List<MessageAttachment> attachments;
     private String messageId;
     private String inReplyTo;
     private String messageReferences;
     private String metadata;
+    private long created;
 }

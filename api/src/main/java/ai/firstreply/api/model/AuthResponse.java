@@ -11,4 +11,6 @@ public class AuthResponse {
     private String token;
     private String refreshToken;
     private Profile profile;
+    private boolean mfaRequired;
+    private String mfaToken;
 }

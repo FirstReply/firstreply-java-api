@@ -8,10 +8,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MessageListParams {
-    private String conversationId;
     private String search;
     private String sort;
     private String order;
+    private int count;
     private int page;
     private int limit;
+    private String conversationId;
 }

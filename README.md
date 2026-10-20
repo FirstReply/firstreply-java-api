@@ -4,12 +4,26 @@ Official Java client library for the [FirstReply](https://firstreply.ai)
 customer support API. It wraps the REST API in a typed, blocking service with
 built-in HTTPS enforcement, request retries, and automatic token refresh.
 
-- **Conversations** — create, search, read, update, close, delete
-- **Messages** — read, reply, update, search
-- **Contacts** — read and update customer contacts
-- **Organizations** — list, create, update, search
-- **API keys** — list, create (plaintext returned once), delete
-- **Authentication** — login, signup, token refresh, password reset
+- **Conversations**: create, search, read with the full thread, update,
+  close, mark as read or spam, delete; totals, daily statistics, statistics
+  per member and support metrics
+- **Messages**: read, reply (sent, as a draft or as an internal note), edit
+  drafts, send drafts, search, delete
+- **Contacts**: search, create, read, update, delete; contact fields
+- **Organizations**: list, read, update, usage; members (list, invite, update,
+  remove)
+- **Inboxes**: list, read, statistics, fetch new mail now, test the connection
+- **Classifications**: list, create, read, update, delete with reassignment,
+  impact, statistics
+- **Knowledge base**: search, create, read, update, delete; knowledge sources
+  (list, read, sync, sync status)
+- **AI**: draft a reply for a conversation, free prompt, translate, test a
+  message against the classifications
+- **Search** across conversations, contacts, knowledge and messages
+- **Templates, prompts, webhooks and saved filters**: list, create, read,
+  update, delete; test webhooks and rotate their signing secret
+- **API keys**: list, create (plaintext returned once), delete
+- **Authentication**: login, signup, token refresh, password reset
 
 ## Requirements
 
@@ -71,10 +85,16 @@ your repositories.
 Create an **organization API key** in FirstReply under
 Organization → Development → API Keys. Keys are named, support optional
 expiry, and are shown exactly once on creation. Requests authenticate with
-the permissions of the organization owner — treat the key as a secret.
+the permissions of the organization owner, so treat the key as a secret.
+
+A key only reaches its own organization: `listOrganizations` returns just
+that organization, and calls for other organizations, `createOrganization`
+and `searchOrganizations` are refused with 403. Those need a user token.
 
 Alternatively, authenticate a user with `login()` and use the returned JWT
-with a `TokenStore` for automatic refresh on 401.
+with a `TokenStore` for automatic refresh on 401. Refresh tokens are rotated:
+`refresh()` revokes the token it was given, so keep the `refreshToken` of its
+response for the next refresh.
 
 ## Quick start
 
@@ -101,6 +121,26 @@ Message sent = service.replyMessage("<messageId>", reply);
 
 // Close the conversation
 service.closeConversation("<conversationId>");
+```
+
+### Drafts, search and metrics
+
+```java
+// Let the AI draft a reply, store it as a draft and send it after review
+AiResult suggestion = service.draftReply("<conversationId>");
+MessageCreate draft = new MessageCreate();
+draft.setMessagePlain(suggestion.getResult());
+draft.setDraft(true);
+Message stored = service.replyMessage("<messageId>", draft);
+service.sendMessage(stored.getId());
+
+// Search conversations, contacts, knowledge and messages at once
+SearchResult hits = service.search("from:anna@example.com refund", 10);
+
+// Support metrics for September
+MetricsStatistics metrics = service.getMetricsStatistics(
+        new ConversationStatisticsParams("2026-09-01", "2026-09-30"));
+Double medianFirstReplyMs = metrics.getOverview().getFirstReplyP50Ms(); // null without replies
 ```
 
 ### Managing API keys
@@ -152,8 +192,9 @@ pre-built `FirstReplyApi` (Retrofit) instance.
 ```
 
 Releases are published to GitHub Packages by the
-[publish workflow](.github/workflows/publish.yml) when a GitHub release is
-created.
+[publish workflow](.github/workflows/publish.yml) when a `vX.Y.Z` tag is
+pushed. This repository is a read-only mirror of `packages/firstreply-java-api`
+in the FirstReply monorepo, where releases are tagged.
 
 ## License
 

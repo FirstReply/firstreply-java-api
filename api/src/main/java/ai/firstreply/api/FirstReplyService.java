@@ -4,7 +4,7 @@ import ai.firstreply.api.model.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
@@ -100,12 +100,32 @@ public class FirstReplyService {
 
     // ── Contacts ──────────────────────────────────────────────────────────
 
+    public ContactList searchContacts(ContactListParams params) {
+        return execute(api.searchContacts(this.organizationId, params));
+    }
+
+    public Contact createContact(ContactCreate request) {
+        return execute(api.createContact(this.organizationId, request));
+    }
+
     public Contact getContact(String contactId) {
         return execute(api.getContact(this.organizationId, contactId));
     }
 
     public Contact updateContact(String contactId, ContactUpdate request) {
         return execute(api.updateContact(this.organizationId, contactId, request));
+    }
+
+    public void deleteContact(String contactId) {
+        execute(api.deleteContact(this.organizationId, contactId));
+    }
+
+    public ContactFieldList listContactFields(String sort, String order, int page, int limit) {
+        return execute(api.listContactFields(this.organizationId, sort, order, page, limit));
+    }
+
+    public ContactField getContactField(String contactFieldId) {
+        return execute(api.getContactField(this.organizationId, contactFieldId));
     }
 
     // ── Conversations ─────────────────────────────────────────────────────
@@ -116,6 +136,15 @@ public class FirstReplyService {
 
     public Conversation getConversation(String conversationId) {
         return execute(api.getConversation(this.organizationId, conversationId));
+    }
+
+    /**
+     * Returns the conversation together with all of its messages in one call.
+     *
+     * @param markRead also mark the conversation as read
+     */
+    public ConversationThread getConversationThread(String conversationId, boolean markRead) {
+        return execute(api.getConversationThread(this.organizationId, conversationId, markRead));
     }
 
     public Conversation updateConversation(String conversationId, ConversationUpdate request) {
@@ -138,18 +167,54 @@ public class FirstReplyService {
         execute(api.closeConversation(this.organizationId, conversationId));
     }
 
+    public void markConversationAsSpam(String conversationId) {
+        execute(api.markConversationAsSpam(this.organizationId, conversationId));
+    }
+
+    public void markConversationAsNotSpam(String conversationId) {
+        execute(api.markConversationAsNotSpam(this.organizationId, conversationId));
+    }
+
+    public ConversationTotals getConversationTotals() {
+        return execute(api.getConversationTotals(this.organizationId));
+    }
+
+    /** Opened and closed conversations per day; dates are {@code yyyy-MM-dd}. */
+    public ConversationStatistics getConversationStatistics(ConversationStatisticsParams params) {
+        return execute(api.getConversationStatistics(this.organizationId, params));
+    }
+
+    public MemberConversationStatistics getMemberConversationStatistics(ConversationStatisticsParams params) {
+        return execute(api.getMemberConversationStatistics(this.organizationId, params));
+    }
+
+    /** First reply times, closing rate, AI reply share, sentiment and close reasons for a date range. */
+    public MetricsStatistics getMetricsStatistics(ConversationStatisticsParams params) {
+        return execute(api.getMetricsStatistics(this.organizationId, params));
+    }
+
     // ── Messages ──────────────────────────────────────────────────────────
 
     public Message getMessage(String messageId) {
         return execute(api.getMessage(this.organizationId, messageId));
     }
 
+    /**
+     * Replies to a message. Set {@code draft} on the request to store the reply as a draft
+     * (send it later with {@link #sendMessage(String)}), or {@code internal} for an internal note.
+     */
     public Message replyMessage(String messageId, MessageCreate request) {
         return execute(api.replyMessage(this.organizationId, messageId, request));
     }
 
+    /** Updates a draft or an internal note; fields left {@code null} keep their value. */
     public Message updateMessage(String messageId, MessageUpdate request) {
         return execute(api.updateMessage(this.organizationId, messageId, request));
+    }
+
+    /** Sends a draft to the customer through the conversation's inbox. */
+    public Message sendMessage(String messageId) {
+        return execute(api.sendMessage(this.organizationId, messageId));
     }
 
     public void deleteMessage(String messageId) {
@@ -162,10 +227,15 @@ public class FirstReplyService {
 
     // ── Organizations ─────────────────────────────────────────────────────
 
+    /**
+     * Lists the organizations of the authenticated user. With an organization API key the
+     * list holds only the key's own organization.
+     */
     public OrganizationList listOrganizations(String sort, String order, int page, int limit) {
         return execute(api.listOrganizations(sort, order, page, limit));
     }
 
+    /** Needs a user token: organization API keys are refused with 403. */
     public Organization createOrganization(OrganizationCreate request) {
         return execute(api.createOrganization(request));
     }
@@ -178,8 +248,38 @@ public class FirstReplyService {
         return execute(api.updateOrganization(organizationId, request));
     }
 
+    /** Plan, inbox and member limits of an organization and how much of them is used. */
+    public OrganizationUsage getOrganizationUsage(String organizationId) {
+        return execute(api.getOrganizationUsage(organizationId));
+    }
+
+    /** Needs a user token: organization API keys are refused with 403. */
     public OrganizationList searchOrganizations(OrganizationListParams params) {
         return execute(api.searchOrganizations(params));
+    }
+
+    // ── Members ───────────────────────────────────────────────────────────
+
+    public OrganizationMemberList listMembers(String sort, String order, int page, int limit) {
+        return execute(api.listMembers(this.organizationId, sort, order, page, limit));
+    }
+
+    public OrganizationMember getMember(String memberId) {
+        return execute(api.getMember(this.organizationId, memberId));
+    }
+
+    /** Invites a member by email. Requires organization admin permission. */
+    public OrganizationMember createMember(OrganizationMemberCreate request) {
+        return execute(api.createMember(this.organizationId, request));
+    }
+
+    /** Fields left {@code null} keep their value. Requires organization admin permission. */
+    public OrganizationMember updateMember(String memberId, OrganizationMemberUpdate request) {
+        return execute(api.updateMember(this.organizationId, memberId, request));
+    }
+
+    public void deleteMember(String memberId) {
+        execute(api.deleteMember(this.organizationId, memberId));
     }
 
     // ── API Keys ──────────────────────────────────────────────────────────
@@ -201,8 +301,265 @@ public class FirstReplyService {
         execute(api.deleteApiKey(this.organizationId, apiKeyId));
     }
 
+    // ── Inboxes ───────────────────────────────────────────────────────────
+
+    public InboxList listInboxes(String sort, String order, int page, int limit) {
+        return execute(api.listInboxes(this.organizationId, sort, order, page, limit));
+    }
+
+    public Inbox getInbox(String inboxId) {
+        return execute(api.getInbox(this.organizationId, inboxId));
+    }
+
+    /** Conversation counts per inbox. */
+    public InboxStatistics getInboxStatistics() {
+        return execute(api.getInboxStatistics(this.organizationId));
+    }
+
+    /** Fetches new messages of the inbox now instead of waiting for the next scheduled run. */
+    public void refreshInbox(String inboxId) {
+        execute(api.refreshInbox(this.organizationId, inboxId));
+    }
+
+    /** Tests the stored connection settings of the inbox against its platform. */
+    public ConnectionTestResult testInbox(String inboxId) {
+        return execute(api.testInbox(this.organizationId, inboxId));
+    }
+
+    // ── Classifications ───────────────────────────────────────────────────
+
+    public ClassificationList listClassifications(String sort, String order, int page, int limit) {
+        return execute(api.listClassifications(this.organizationId, sort, order, page, limit));
+    }
+
+    public Classification getClassification(String classificationId) {
+        return execute(api.getClassification(this.organizationId, classificationId));
+    }
+
+    public Classification createClassification(ClassificationCreate request) {
+        return execute(api.createClassification(this.organizationId, request));
+    }
+
+    /**
+     * Replaces the classification's settings. The flags and the color are plain values, so
+     * leaving them unset turns them off: start from {@link #getClassification(String)}.
+     */
+    public Classification updateClassification(String classificationId, ClassificationUpdate request) {
+        return execute(api.updateClassification(this.organizationId, classificationId, request));
+    }
+
+    /**
+     * Deletes a classification.
+     *
+     * @param reassignTo classification that takes over its conversations and knowledge, or
+     *                   {@code null} to leave them unclassified
+     */
+    public void deleteClassification(String classificationId, String reassignTo) {
+        execute(api.deleteClassification(this.organizationId, classificationId, reassignTo));
+    }
+
+    /** How many conversations and knowledge entries use the classification. */
+    public ClassificationImpact getClassificationImpact(String classificationId) {
+        return execute(api.getClassificationImpact(this.organizationId, classificationId));
+    }
+
+    public ClassificationStatistics getClassificationStatistics() {
+        return execute(api.getClassificationStatistics(this.organizationId));
+    }
+
+    // ── Knowledge ─────────────────────────────────────────────────────────
+
+    public KnowledgeList searchKnowledge(KnowledgeListParams params) {
+        return execute(api.searchKnowledge(this.organizationId, params));
+    }
+
+    public KnowledgeEntry getKnowledge(String knowledgeId) {
+        return execute(api.getKnowledge(this.organizationId, knowledgeId));
+    }
+
+    public KnowledgeEntry createKnowledge(KnowledgeEntryCreate request) {
+        return execute(api.createKnowledge(this.organizationId, request));
+    }
+
+    /**
+     * Replaces the knowledge entry. {@code positive} is a plain value, so leaving it unset
+     * makes the entry negative: start from {@link #getKnowledge(String)}.
+     */
+    public KnowledgeEntry updateKnowledge(String knowledgeId, KnowledgeEntryUpdate request) {
+        return execute(api.updateKnowledge(this.organizationId, knowledgeId, request));
+    }
+
+    public void deleteKnowledge(String knowledgeId) {
+        execute(api.deleteKnowledge(this.organizationId, knowledgeId));
+    }
+
+    public KnowledgeSourceList listKnowledgeSources(String sort, String order, int page, int limit) {
+        return execute(api.listKnowledgeSources(this.organizationId, sort, order, page, limit));
+    }
+
+    public KnowledgeSource getKnowledgeSource(String knowledgeSourceId) {
+        return execute(api.getKnowledgeSource(this.organizationId, knowledgeSourceId));
+    }
+
+    /** Starts a sync of the knowledge source; poll {@link #getKnowledgeSourceStatus(String)}. */
+    public void syncKnowledgeSource(String knowledgeSourceId) {
+        execute(api.syncKnowledgeSource(this.organizationId, knowledgeSourceId));
+    }
+
+    public KnowledgeSourceSyncStatus getKnowledgeSourceStatus(String knowledgeSourceId) {
+        return execute(api.getKnowledgeSourceStatus(this.organizationId, knowledgeSourceId));
+    }
+
+    // ── AI ────────────────────────────────────────────────────────────────
+
+    /** Generates a reply to the latest customer message of the conversation, without sending it. */
+    public AiResult draftReply(String conversationId) {
+        return execute(api.draftReply(this.organizationId, conversationId));
+    }
+
+    /** Runs a free prompt with the organization's knowledge (unless {@code removeKnowledge}). */
+    public AiResult prompt(AiRequest request) {
+        return execute(api.prompt(this.organizationId, request));
+    }
+
+    /**
+     * Translates text. When the text already is in the target language it comes back
+     * unchanged with {@code translated == false}; an empty translation means it failed.
+     */
+    public TranslateResult translate(TranslateRequest request) {
+        return execute(api.translate(this.organizationId, request));
+    }
+
+    /** Classifies a sample customer message and drafts the reply the AI would send. */
+    public TestResult testAi(TestRequest request) {
+        return execute(api.testAi(this.organizationId, request));
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────
+
+    /**
+     * Searches conversations, contacts, knowledge and messages at once.
+     *
+     * @param query search text, at least 2 characters; supports the search operators
+     *              ({@code "phrase"}, {@code -word}, {@code from:}, {@code subject:}, ...)
+     * @param limit results per type, or {@code null} for the default
+     */
+    public SearchResult search(String query, Integer limit) {
+        return execute(api.search(this.organizationId, query, limit));
+    }
+
+    // ── Templates ─────────────────────────────────────────────────────────
+
+    public TemplateList searchTemplates(TemplateListParams params) {
+        return execute(api.searchTemplates(this.organizationId, params));
+    }
+
+    public Template getTemplate(String templateId) {
+        return execute(api.getTemplate(this.organizationId, templateId));
+    }
+
+    public Template createTemplate(TemplateCreate request) {
+        return execute(api.createTemplate(this.organizationId, request));
+    }
+
+    public Template updateTemplate(String templateId, TemplateUpdate request) {
+        return execute(api.updateTemplate(this.organizationId, templateId, request));
+    }
+
+    public void deleteTemplate(String templateId) {
+        execute(api.deleteTemplate(this.organizationId, templateId));
+    }
+
+    // ── Prompts ───────────────────────────────────────────────────────────
+
+    public PromptList searchPrompts(ListParams params) {
+        return execute(api.searchPrompts(this.organizationId, params));
+    }
+
+    public Prompt getPrompt(String promptId) {
+        return execute(api.getPrompt(this.organizationId, promptId));
+    }
+
+    public Prompt createPrompt(PromptCreate request) {
+        return execute(api.createPrompt(this.organizationId, request));
+    }
+
+    public Prompt updatePrompt(String promptId, PromptUpdate request) {
+        return execute(api.updatePrompt(this.organizationId, promptId, request));
+    }
+
+    public void deletePrompt(String promptId) {
+        execute(api.deletePrompt(this.organizationId, promptId));
+    }
+
+    // ── Webhooks ──────────────────────────────────────────────────────────
+
+    public WebhookList searchWebhooks(WebhookListParams params) {
+        return execute(api.searchWebhooks(this.organizationId, params));
+    }
+
+    public Webhook getWebhook(String webhookId) {
+        return execute(api.getWebhook(this.organizationId, webhookId));
+    }
+
+    /**
+     * Creates a webhook. {@code event} is one of the {@link WebhookEventType} names, or several
+     * separated by commas.
+     */
+    public Webhook createWebhook(WebhookCreate request) {
+        return execute(api.createWebhook(this.organizationId, request));
+    }
+
+    public Webhook updateWebhook(String webhookId, WebhookUpdate request) {
+        return execute(api.updateWebhook(this.organizationId, webhookId, request));
+    }
+
+    public void deleteWebhook(String webhookId) {
+        execute(api.deleteWebhook(this.organizationId, webhookId));
+    }
+
+    /** Delivers a {@link WebhookEventType#WEBHOOK_TEST} event to the webhook's target. */
+    public WebhookTestResult testWebhook(String webhookId) {
+        return execute(api.testWebhook(this.organizationId, webhookId));
+    }
+
+    /** Creates a new signing secret for the webhook's deliveries; the old one stops working. */
+    public WebhookSecret rotateWebhookSecret(String webhookId) {
+        return execute(api.rotateWebhookSecret(this.organizationId, webhookId));
+    }
+
+    // ── Saved conversation filters ────────────────────────────────────────
+
+    public ConversationFilterList listFilters(String sort, String order, int page, int limit) {
+        return execute(api.listFilters(this.organizationId, sort, order, page, limit));
+    }
+
+    public ConversationFilter getFilter(String filterId) {
+        return execute(api.getFilter(this.organizationId, filterId));
+    }
+
+    public ConversationFilter createFilter(ConversationFilterCreate request) {
+        return execute(api.createFilter(this.organizationId, request));
+    }
+
+    /**
+     * Replaces the saved filter. {@code color} and {@code arrangement} are plain values, so
+     * leaving them unset resets them to 0: start from {@link #getFilter(String)}.
+     */
+    public ConversationFilter updateFilter(String filterId, ConversationFilterUpdate request) {
+        return execute(api.updateFilter(this.organizationId, filterId, request));
+    }
+
+    public void deleteFilter(String filterId) {
+        execute(api.deleteFilter(this.organizationId, filterId));
+    }
+
     // ── Authentication ────────────────────────────────────────────────────
 
+    /**
+     * Logs a user in. When the account has two-factor authentication enabled the response
+     * carries {@code mfaRequired} and an {@code mfaToken} instead of session tokens.
+     */
     public AuthResponse login(LoginRequest request) {
         return execute(api.login(request));
     }
@@ -211,6 +568,10 @@ public class FirstReplyService {
         return execute(api.signup(request));
     }
 
+    /**
+     * Exchanges a refresh token for a new access token. Refresh tokens are rotated: the
+     * presented one is revoked, keep the {@code refreshToken} of the response for the next call.
+     */
     public TokenResponse refresh(RefreshRequest request) {
         return execute(api.refresh(request));
     }
@@ -228,22 +589,40 @@ public class FirstReplyService {
     public static <T> T execute(Single<T> apiCall) {
         try {
             return apiCall.blockingGet();
-        } catch (HttpException e) {
+        } catch (Exception e) {
+            throw toFirstReplyException(e);
+        }
+    }
+
+    /**
+     * Executes a Retrofit {@link Completable} (a call without response body), blocking until it
+     * finished. HTTP errors (non-2xx) are converted to {@link FirstReplyException}.
+     */
+    public static void execute(Completable apiCall) {
+        try {
+            apiCall.blockingAwait();
+        } catch (Exception e) {
+            throw toFirstReplyException(e);
+        }
+    }
+
+    private static FirstReplyException toFirstReplyException(Exception e) {
+        if (e instanceof HttpException) {
+            HttpException he = (HttpException) e;
             String body = null;
             try {
-                if (e.response() != null && e.response().errorBody() != null) {
-                    body = e.response().errorBody().string();
+                if (he.response() != null && he.response().errorBody() != null) {
+                    body = he.response().errorBody().string();
                 }
             } catch (Exception ignored) {
             }
-            throw new FirstReplyException(e.code(), body != null ? body : e.message());
-        } catch (Exception e) {
-            if (e.getCause() instanceof HttpException) {
-                HttpException he = (HttpException) e.getCause();
-                throw new FirstReplyException(he.code(), he.message());
-            }
-            throw new FirstReplyException(0, e.getMessage());
+            return new FirstReplyException(he.code(), body != null ? body : he.message());
         }
+        if (e.getCause() instanceof HttpException) {
+            HttpException he = (HttpException) e.getCause();
+            return new FirstReplyException(he.code(), he.message());
+        }
+        return new FirstReplyException(0, e.getMessage());
     }
 
     /**
@@ -271,7 +650,6 @@ public class FirstReplyService {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         return mapper;
     }
 

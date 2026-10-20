@@ -13,9 +13,9 @@ public class ConversationListParams {
     private String search;
     private String sort;
     private String order;
+    private int count;
     private int page;
     private int limit;
-
     private List<String> classificationIds;
     private String language;
     private String status;
@@ -24,6 +24,8 @@ public class ConversationListParams {
     private List<String> inboxIds;
     private int priority = -1;
     private Boolean spam;
-    private Boolean custom;
-    private int count;
+    private Long createdFrom;
+    private Long createdTo;
+    private Long lastUpdateFrom;
+    private Long lastUpdateTo;
 }

@@ -12,5 +12,6 @@ public class ContactFieldValue {
     private String name;
     private String key;
     private String mask;
+    private boolean showInConversation;
     private String value;
 }

@@ -12,4 +12,11 @@ public class OrganizationUpdate {
     private String language;
     private String description;
     private Integer color;
+    private Integer autoCloseInactivityDays;
+    private Boolean emailDailySummary;
+    private Boolean emailWeeklySummary;
+    private Boolean emailMonthlySummary;
+    private String aiPromptEgo;
+    private String aiPromptConfig;
+    private String aiPromptClassification;
 }
