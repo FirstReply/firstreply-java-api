@@ -50,6 +50,11 @@ public interface WebhookEventType {
     String INBOX_UPDATE = "inbox.update";
     String INBOX_DELETE = "inbox.delete";
 
+    String POST_CREATE = "post.create";
+    /** Carries the post's status, so published and failed posts arrive as updates. */
+    String POST_UPDATE = "post.update";
+    String POST_DELETE = "post.delete";
+
     String ORGANIZATION_UPDATE = "organization.update";
 
     String MEMBER_ADD = "member.add";

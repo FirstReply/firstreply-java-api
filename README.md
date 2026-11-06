@@ -20,6 +20,11 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
 - **AI**: draft a reply for a conversation, free prompt, translate, test a
   message against the classifications
 - **Search** across conversations, contacts, knowledge and messages
+- **Social posts**: list, draft, schedule, edit, publish now, approve, retry a
+  failed channel, delete (optionally on the platforms too); media uploads,
+  metric snapshots per post and publishing analytics. Webhooks receive
+  `post.create`, `post.update` (status changes, including published and
+  failed) and `post.delete`
 - **Templates, prompts, webhooks and saved filters**: list, create, read,
   update, delete; test webhooks and rotate their signing secret
 - **API keys**: list, create (plaintext returned once), delete
@@ -141,6 +146,23 @@ SearchResult hits = service.search("from:anna@example.com refund", 10);
 MetricsStatistics metrics = service.getMetricsStatistics(
         new ConversationStatisticsParams("2026-09-01", "2026-09-30"));
 Double medianFirstReplyMs = metrics.getOverview().getFirstReplyP50Ms(); // null without replies
+```
+
+### Social posts
+
+```java
+// Schedule a post on a channel (an inbox with publishingEnabled)
+SocialPostCreate post = new SocialPostCreate();
+post.setContent("Our new feature is live.");
+post.setStatus("SCHEDULED");
+post.setScheduledAt(Instant.parse("2026-11-10T09:00:00Z").toEpochMilli());
+post.setTimezone("Europe/Vienna");
+post.setTargets(List.of(new SocialPostTargetInput("<inboxId>", null, null)));
+SocialPost scheduled = service.createPost(post); // PENDING_APPROVAL when a manager has to approve it
+
+// How did the last 30 days do?
+SocialAnalytics analytics = service.getPostAnalytics(null, null, null);
+Long views = analytics.getViews(); // null when no channel offers views
 ```
 
 ### Managing API keys

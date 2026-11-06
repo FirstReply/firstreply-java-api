@@ -13,6 +13,7 @@ public class OrganizationUpdate {
     private String description;
     private Integer color;
     private Integer autoCloseInactivityDays;
+    private Boolean postsRequireApproval;
     private Boolean emailDailySummary;
     private Boolean emailWeeklySummary;
     private Boolean emailMonthlySummary;

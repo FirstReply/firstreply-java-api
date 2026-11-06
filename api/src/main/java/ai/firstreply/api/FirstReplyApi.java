@@ -5,6 +5,8 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import retrofit2.http.*;
 
+import java.util.List;
+
 public interface FirstReplyApi {
 
     // ── Contacts ──────────────────────────────────────────────────────────
@@ -509,6 +511,80 @@ public interface FirstReplyApi {
     Completable deleteFilter(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
+
+    // ── Social posts ──────────────────────────────────────────────────────
+
+    @GET("/v1/organizations/{organizationId}/posts")
+    Single<SocialPostList> listPosts(
+            @Path("organizationId") String organizationId,
+            @Query("status") String status,
+            @Query("inboxId") String inboxId,
+            @Query("from") Long from,
+            @Query("to") Long to,
+            @Query("search") String search,
+            @Query("order") String order,
+            @Query("page") int page,
+            @Query("limit") int limit);
+
+    @POST("/v1/organizations/{organizationId}/posts")
+    Single<SocialPost> createPost(
+            @Path("organizationId") String organizationId,
+            @Body SocialPostCreate request);
+
+    @GET("/v1/organizations/{organizationId}/posts/{id}")
+    Single<SocialPost> getPost(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @PUT("/v1/organizations/{organizationId}/posts/{id}")
+    Single<SocialPost> updatePost(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Body SocialPostUpdate request);
+
+    @DELETE("/v1/organizations/{organizationId}/posts/{id}")
+    Completable deletePost(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Query("deleteOnPlatform") boolean deleteOnPlatform);
+
+    @POST("/v1/organizations/{organizationId}/posts/{id}/publish")
+    Single<SocialPost> publishPost(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @POST("/v1/organizations/{organizationId}/posts/{id}/approve")
+    Single<SocialPost> approvePost(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @POST("/v1/organizations/{organizationId}/posts/{id}/targets/{targetId}/retry")
+    Single<SocialPost> retryPostTarget(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Path("targetId") String targetId);
+
+    @GET("/v1/organizations/{organizationId}/posts/{id}/metrics")
+    Single<List<SocialPostMetric>> getPostMetrics(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @GET("/v1/organizations/{organizationId}/posts/analytics")
+    Single<SocialAnalytics> getPostAnalytics(
+            @Path("organizationId") String organizationId,
+            @Query("from") Long from,
+            @Query("to") Long to,
+            @Query("inboxId") String inboxId);
+
+    @POST("/v1/organizations/{organizationId}/posts/media")
+    Single<SocialPostMediaUpload> startPostMediaUpload(
+            @Path("organizationId") String organizationId,
+            @Body SocialPostMediaUploadRequest request);
+
+    @POST("/v1/organizations/{organizationId}/posts/media/{mediaId}/complete")
+    Single<SocialPostMedia> completePostMediaUpload(
+            @Path("organizationId") String organizationId,
+            @Path("mediaId") String mediaId);
 
     // ── Authentication ────────────────────────────────────────────────────
 

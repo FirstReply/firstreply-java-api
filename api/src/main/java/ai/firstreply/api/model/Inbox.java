@@ -62,6 +62,12 @@ public class Inbox {
     private String webchatLauncherLabel;
     private Boolean webchatRequireContact;
     private String webchatAllowedDomains;
+    /** Posts can target this inbox (social channels only) */
+    private Boolean publishingEnabled;
+    /** Which comments on posts open conversations: ALL, QUESTIONS or NONE */
+    private String commentMode;
+    /** The AI may answer comments publicly on its own */
+    private Boolean commentAutoReply;
     private Contact contact;
     private long lastMessage;
 }

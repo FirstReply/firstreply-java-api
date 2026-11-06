@@ -21,6 +21,9 @@ public class Organization {
     private String plan;
     private int maxInboxes;
     private int maxMembers;
+    private int maxPublishingChannels;
+    /** Members' posts wait for a manager's approval before they are published */
+    private boolean postsRequireApproval;
     private int autoCloseInactivityDays;
     private boolean emailDailySummary;
     private boolean emailWeeklySummary;

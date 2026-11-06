@@ -16,6 +16,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -552,6 +553,93 @@ public class FirstReplyService {
 
     public void deleteFilter(String filterId) {
         execute(api.deleteFilter(this.organizationId, filterId));
+    }
+
+    // ── Social posts ──────────────────────────────────────────────────────
+
+    /** Lists posts, newest first ({@code order = "asc"} for calendar order). */
+    public SocialPostList listPosts(SocialPostListParams params) {
+        return execute(api.listPosts(this.organizationId, params.getStatus(), params.getInboxId(), params.getFrom(),
+                params.getTo(), params.getSearch(), params.getOrder(), params.getPage(), params.getLimit()));
+    }
+
+    /**
+     * Creates a draft, or a scheduled post with {@code status = "SCHEDULED"} and
+     * {@code scheduledAt}. When the organization requires approval, a member's scheduled post
+     * comes back as PENDING_APPROVAL and waits for a manager.
+     */
+    public SocialPost createPost(SocialPostCreate request) {
+        return execute(api.createPost(this.organizationId, request));
+    }
+
+    /** The post with its targets, their status and latest metrics, and its media. */
+    public SocialPost getPost(String postId) {
+        return execute(api.getPost(this.organizationId, postId));
+    }
+
+    /**
+     * Edits or reschedules a post until publishing starts. Replaces text, time, targets and
+     * media: start from {@link #getPost(String)}.
+     */
+    public SocialPost updatePost(String postId, SocialPostUpdate request) {
+        return execute(api.updatePost(this.organizationId, postId, request));
+    }
+
+    /**
+     * Deletes a draft or cancels a scheduled post.
+     *
+     * @param deleteOnPlatform also delete the published copies on the platforms first; when one
+     *                         of them fails, nothing is deleted
+     */
+    public void deletePost(String postId, boolean deleteOnPlatform) {
+        execute(api.deletePost(this.organizationId, postId, deleteOnPlatform));
+    }
+
+    /** Publishes right away. With approval required, a member's post goes to the managers instead. */
+    public SocialPost publishPost(String postId) {
+        return execute(api.publishPost(this.organizationId, postId));
+    }
+
+    /**
+     * Approves a post waiting for approval (manager or above). It is published at its time, or
+     * now when that has passed.
+     */
+    public SocialPost approvePost(String postId) {
+        return execute(api.approvePost(this.organizationId, postId));
+    }
+
+    /** Publishes a failed target (one channel of the post) again. */
+    public SocialPost retryPostTarget(String postId, String targetId) {
+        return execute(api.retryPostTarget(this.organizationId, postId, targetId));
+    }
+
+    /** Metric snapshots of every target of the post, oldest first. */
+    public List<SocialPostMetric> getPostMetrics(String postId) {
+        return execute(api.getPostMetrics(this.organizationId, postId));
+    }
+
+    /**
+     * Totals, a daily series, top posts and channels for the posts published in a period.
+     *
+     * @param from    epoch millis, or {@code null} for 30 days before {@code to}
+     * @param to      epoch millis, or {@code null} for now; the period is at most one year
+     * @param inboxId only this channel, or {@code null} for all
+     */
+    public SocialAnalytics getPostAnalytics(Long from, Long to, String inboxId) {
+        return execute(api.getPostAnalytics(this.organizationId, from, to, inboxId));
+    }
+
+    /**
+     * Registers a media file and returns a signed URL to send it to. Upload the file there,
+     * then call {@link #completePostMediaUpload(String)}.
+     */
+    public SocialPostMediaUpload startPostMediaUpload(SocialPostMediaUploadRequest request) {
+        return execute(api.startPostMediaUpload(this.organizationId, request));
+    }
+
+    /** Checks the uploaded file and makes it usable in posts ({@link SocialPostMediaInput}). */
+    public SocialPostMedia completePostMediaUpload(String mediaId) {
+        return execute(api.completePostMediaUpload(this.organizationId, mediaId));
     }
 
     // ── Authentication ────────────────────────────────────────────────────

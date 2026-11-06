@@ -20,4 +20,8 @@ public class OrganizationUsage {
     private boolean membersWarning;
     private boolean inboxesLimitReached;
     private boolean membersLimitReached;
+    /** Inboxes with Publishing on, counted against their own limit */
+    private int numPublishingChannels;
+    private int maxPublishingChannels;
+    private boolean publishingLimitReached;
 }

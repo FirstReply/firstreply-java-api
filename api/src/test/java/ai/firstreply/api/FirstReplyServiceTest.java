@@ -6,6 +6,14 @@ import ai.firstreply.api.model.MessageCreate;
 import ai.firstreply.api.model.MetricsStatistics;
 import ai.firstreply.api.model.OrganizationMemberUpdate;
 import ai.firstreply.api.model.SearchResult;
+import ai.firstreply.api.model.SocialAnalytics;
+import ai.firstreply.api.model.SocialPost;
+import ai.firstreply.api.model.SocialPostCreate;
+import ai.firstreply.api.model.SocialPostList;
+import ai.firstreply.api.model.SocialPostListParams;
+import ai.firstreply.api.model.SocialPostMetric;
+import ai.firstreply.api.model.SocialPostTarget;
+import ai.firstreply.api.model.SocialPostTargetInput;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -15,9 +23,11 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -142,5 +152,94 @@ class FirstReplyServiceTest {
         RecordedRequest request = server.takeRequest();
         assertEquals("/v1/organizations/org1/metrics/statistic", request.getPath());
         assertEquals("{\"startDate\":\"2026-09-01\",\"endDate\":\"2026-09-30\"}", request.getBody().readUtf8());
+    }
+
+    @Test
+    void listsPostsWithTheFiltersThatWereSet() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"items\":[{\"id\":\"p1\",\"status\":\"SCHEDULED\","
+                + "\"targets\":[{\"id\":\"t1\",\"inboxId\":\"i1\",\"platform\":\"LINKEDIN\",\"likes\":12,\"views\":null}]}],"
+                + "\"params\":{\"count\":1,\"page\":1,\"limit\":20}}"));
+        SocialPostListParams params = new SocialPostListParams();
+        params.setStatus("SCHEDULED,PENDING_APPROVAL");
+        params.setFrom(1762000000000L);
+        params.setOrder("asc");
+        params.setPage(1);
+        params.setLimit(20);
+
+        SocialPostList posts = service.listPosts(params);
+
+        assertEquals("/v1/organizations/org1/posts?status=SCHEDULED%2CPENDING_APPROVAL&from=1762000000000&order=asc&page=1&limit=20",
+                server.takeRequest().getPath());
+        SocialPostTarget target = posts.getItems().get(0).getTargets().get(0);
+        assertEquals("LINKEDIN", target.getPlatform());
+        assertEquals(12L, target.getLikes());
+        assertNull(target.getViews());
+    }
+
+    @Test
+    void schedulesPost() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"id\":\"p1\",\"status\":\"PENDING_APPROVAL\",\"scheduledAt\":1762765200000}"));
+        SocialPostCreate post = new SocialPostCreate();
+        post.setContent("Our new feature is live.");
+        post.setStatus("SCHEDULED");
+        post.setScheduledAt(1762765200000L);
+        post.setTimezone("Europe/Vienna");
+        post.setTargets(List.of(new SocialPostTargetInput("i1", null, null)));
+
+        SocialPost created = service.createPost(post);
+
+        RecordedRequest request = server.takeRequest();
+        assertEquals("POST", request.getMethod());
+        assertEquals("/v1/organizations/org1/posts", request.getPath());
+        assertEquals("{\"content\":\"Our new feature is live.\",\"scheduledAt\":1762765200000,\"timezone\":\"Europe/Vienna\","
+                + "\"status\":\"SCHEDULED\",\"targets\":[{\"inboxId\":\"i1\"}]}", request.getBody().readUtf8());
+        assertEquals("PENDING_APPROVAL", created.getStatus());
+    }
+
+    @Test
+    void publishesDeletesAndRetriesPosts() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"id\":\"p1\",\"status\":\"PUBLISHING\"}"));
+        server.enqueue(new MockResponse().setBody("{\"id\":\"p1\",\"status\":\"PUBLISHING\"}"));
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        service.publishPost("p1");
+        service.retryPostTarget("p1", "t1");
+        service.deletePost("p1", true);
+
+        RecordedRequest publish = server.takeRequest();
+        assertEquals("POST", publish.getMethod());
+        assertEquals("/v1/organizations/org1/posts/p1/publish", publish.getPath());
+        assertEquals("/v1/organizations/org1/posts/p1/targets/t1/retry", server.takeRequest().getPath());
+        RecordedRequest delete = server.takeRequest();
+        assertEquals("DELETE", delete.getMethod());
+        assertEquals("/v1/organizations/org1/posts/p1?deleteOnPlatform=true", delete.getPath());
+    }
+
+    @Test
+    void readsPostAnalytics() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"from\":1759300000000,\"to\":1761900000000,\"posts\":3,\"views\":900,"
+                + "\"saves\":null,\"engagement\":42,\"series\":[{\"day\":\"2026-10-01\",\"posts\":1,\"views\":300}],"
+                + "\"channels\":[{\"inboxId\":\"i1\",\"platform\":\"INSTAGRAM\",\"followers\":1200,\"followersChange\":35}]}"));
+
+        SocialAnalytics analytics = service.getPostAnalytics(1759300000000L, 1761900000000L, null);
+
+        assertEquals("/v1/organizations/org1/posts/analytics?from=1759300000000&to=1761900000000", server.takeRequest().getPath());
+        assertEquals(3, analytics.getPosts());
+        assertEquals(42L, analytics.getEngagement());
+        assertNull(analytics.getSaves());
+        assertEquals("2026-10-01", analytics.getSeries().get(0).getDay());
+        assertEquals(35L, analytics.getChannels().get(0).getFollowersChange());
+    }
+
+    @Test
+    void readsPostMetricSnapshots() throws Exception {
+        server.enqueue(new MockResponse().setBody("[{\"targetId\":\"t1\",\"capturedAt\":1762000000000,\"likes\":5},"
+                + "{\"targetId\":\"t1\",\"capturedAt\":1762086400000,\"likes\":9}]"));
+
+        List<SocialPostMetric> metrics = service.getPostMetrics("p1");
+
+        assertEquals("/v1/organizations/org1/posts/p1/metrics", server.takeRequest().getPath());
+        assertEquals(2, metrics.size());
+        assertEquals(9L, metrics.get(1).getLikes());
     }
 }
