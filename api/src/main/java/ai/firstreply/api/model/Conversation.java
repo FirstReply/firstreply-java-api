@@ -36,4 +36,11 @@ public class Conversation {
     private boolean hasDraft;
     private String searchSnippet;
     private String searchMessageId;
+    /** null for private messages, COMMENT for a comment thread on a social post */
+    private String kind;
+    private String externalThreadId;
+    private String externalPostId;
+    private String socialPostId;
+    /** The post of a comment thread (single loads only) */
+    private SocialPostSummary socialPost;
 }

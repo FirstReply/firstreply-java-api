@@ -6,7 +6,8 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
 
 - **Conversations**: create, search, read with the full thread, update,
   close, mark as read or spam, delete; totals, daily statistics, statistics
-  per member and support metrics
+  per member and support metrics; hide, unhide, delete or like a comment of a
+  comment thread and answer it privately
 - **Messages**: read, reply (sent, as a draft or as an internal note), edit
   drafts, send drafts, search, delete
 - **Contacts**: search, create, read, update, delete; contact fields
@@ -21,7 +22,8 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
   message against the classifications
 - **Search** across conversations, contacts, knowledge and messages
 - **Social posts**: list, draft, schedule, edit, publish now, approve, retry a
-  failed channel, delete (optionally on the platforms too); media uploads,
+  failed channel, delete (optionally on the platforms too); write, shorten
+  or rewrite a text with AI; media uploads, the comment threads of a post,
   metric snapshots per post and publishing analytics. Webhooks receive
   `post.create`, `post.update` (status changes, including published and
   failed) and `post.delete`
@@ -163,7 +165,24 @@ SocialPost scheduled = service.createPost(post); // PENDING_APPROVAL when a mana
 // How did the last 30 days do?
 SocialAnalytics analytics = service.getPostAnalytics(null, null, null);
 Long views = analytics.getViews(); // null when no channel offers views
+
+// Let the AI write a post from the knowledge base; nothing is saved
+SocialPostWriteResult text = service.writePost(
+        new SocialPostWriteRequest("WRITE", null, "Announce the new reporting page", "LINKEDIN", 3000, null));
+
+// The comment threads on a post, as conversations
+ConversationList comments = service.listPostConversations(scheduled.getId(), 1, 50);
 ```
+
+### Upgrading
+
+- Unreleased: `Inbox` gained `publishingAuthorized` and the Threads
+  (`threads*`), X (`twitter*`) and TikTok (`tiktok*`) fields, and
+  `Conversation` the comment thread fields (`kind`, `externalThreadId`,
+  `externalPostId`, `socialPostId`, `socialPost`), so their Lombok all-args
+  constructors take more parameters, in a new order. Code calling those
+  constructors no longer compiles: use the no-args constructor and the
+  setters.
 
 ### Managing API keys
 

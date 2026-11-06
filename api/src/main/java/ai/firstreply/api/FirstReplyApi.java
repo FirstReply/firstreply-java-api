@@ -123,6 +123,19 @@ public interface FirstReplyApi {
             @Path("organizationId") String organizationId,
             @Body ConversationStatisticsParams params);
 
+    @POST("/v1/organizations/{organizationId}/conversations/{conversationId}/messages/{messageId}/moderation")
+    Single<Message> moderateComment(
+            @Path("organizationId") String organizationId,
+            @Path("conversationId") String conversationId,
+            @Path("messageId") String messageId,
+            @Body CommentModerationRequest request);
+
+    @POST("/v1/organizations/{organizationId}/conversations/{conversationId}/private-reply")
+    Single<Message> replyToCommentPrivately(
+            @Path("organizationId") String organizationId,
+            @Path("conversationId") String conversationId,
+            @Body PrivateReplyRequest request);
+
     // ── Messages ──────────────────────────────────────────────────────────
 
     @GET("/v1/organizations/{organizationId}/messages/{id}")
@@ -568,6 +581,18 @@ public interface FirstReplyApi {
     Single<List<SocialPostMetric>> getPostMetrics(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
+
+    @GET("/v1/organizations/{organizationId}/posts/{id}/conversations")
+    Single<ConversationList> listPostConversations(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Query("page") int page,
+            @Query("limit") int limit);
+
+    @POST("/v1/organizations/{organizationId}/posts/ai")
+    Single<SocialPostWriteResult> writePost(
+            @Path("organizationId") String organizationId,
+            @Body SocialPostWriteRequest request);
 
     @GET("/v1/organizations/{organizationId}/posts/analytics")
     Single<SocialAnalytics> getPostAnalytics(

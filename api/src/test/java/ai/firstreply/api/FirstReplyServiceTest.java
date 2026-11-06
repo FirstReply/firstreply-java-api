@@ -1,10 +1,14 @@
 package ai.firstreply.api;
 
+import ai.firstreply.api.model.CommentModerationRequest;
 import ai.firstreply.api.model.Conversation;
+import ai.firstreply.api.model.ConversationList;
 import ai.firstreply.api.model.ConversationStatisticsParams;
+import ai.firstreply.api.model.Message;
 import ai.firstreply.api.model.MessageCreate;
 import ai.firstreply.api.model.MetricsStatistics;
 import ai.firstreply.api.model.OrganizationMemberUpdate;
+import ai.firstreply.api.model.PrivateReplyRequest;
 import ai.firstreply.api.model.SearchResult;
 import ai.firstreply.api.model.SocialAnalytics;
 import ai.firstreply.api.model.SocialPost;
@@ -14,6 +18,8 @@ import ai.firstreply.api.model.SocialPostListParams;
 import ai.firstreply.api.model.SocialPostMetric;
 import ai.firstreply.api.model.SocialPostTarget;
 import ai.firstreply.api.model.SocialPostTargetInput;
+import ai.firstreply.api.model.SocialPostWriteRequest;
+import ai.firstreply.api.model.SocialPostWriteResult;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -241,5 +247,55 @@ class FirstReplyServiceTest {
         assertEquals("/v1/organizations/org1/posts/p1/metrics", server.takeRequest().getPath());
         assertEquals(2, metrics.size());
         assertEquals(9L, metrics.get(1).getLikes());
+    }
+
+    @Test
+    void writesPostWithAi() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"text\":\"New feature, live today.\",\"tooLong\":true}"));
+        SocialPostWriteRequest request = new SocialPostWriteRequest();
+        request.setAction("SHORTEN");
+        request.setText("Our new feature is live today, try it out.");
+        request.setPlatform("X");
+        request.setMaxLength(20);
+
+        SocialPostWriteResult result = service.writePost(request);
+
+        RecordedRequest recorded = server.takeRequest();
+        assertEquals("POST", recorded.getMethod());
+        assertEquals("/v1/organizations/org1/posts/ai", recorded.getPath());
+        assertEquals("{\"action\":\"SHORTEN\",\"text\":\"Our new feature is live today, try it out.\",\"platform\":\"X\","
+                + "\"maxLength\":20}", recorded.getBody().readUtf8());
+        assertEquals("New feature, live today.", result.getText());
+        assertTrue(result.isTooLong());
+    }
+
+    @Test
+    void listsCommentThreadsOfPost() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"items\":[{\"id\":\"c1\",\"organizationId\":\"org1\"}],"
+                + "\"params\":{\"count\":1,\"page\":1,\"limit\":20}}"));
+
+        ConversationList threads = service.listPostConversations("p1", 1, 20);
+
+        assertEquals("/v1/organizations/org1/posts/p1/conversations?page=1&limit=20", server.takeRequest().getPath());
+        assertEquals("c1", threads.getItems().get(0).getId());
+    }
+
+    @Test
+    void moderatesAndAnswersComments() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"id\":\"m1\"}"));
+        server.enqueue(new MockResponse().setBody("{\"id\":\"m1\"}"));
+
+        Message hidden = service.moderateComment("c1", "m1", new CommentModerationRequest("HIDE"));
+        service.replyToCommentPrivately("c1", new PrivateReplyRequest("We sent you the details.", "m1"));
+
+        RecordedRequest moderation = server.takeRequest();
+        assertEquals("POST", moderation.getMethod());
+        assertEquals("/v1/organizations/org1/conversations/c1/messages/m1/moderation", moderation.getPath());
+        assertEquals("{\"action\":\"HIDE\"}", moderation.getBody().readUtf8());
+        assertEquals("m1", hidden.getId());
+        RecordedRequest privateReply = server.takeRequest();
+        assertEquals("POST", privateReply.getMethod());
+        assertEquals("/v1/organizations/org1/conversations/c1/private-reply", privateReply.getPath());
+        assertEquals("{\"text\":\"We sent you the details.\",\"messageId\":\"m1\"}", privateReply.getBody().readUtf8());
     }
 }

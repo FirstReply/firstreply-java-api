@@ -68,6 +68,29 @@ public class Inbox {
     private String commentMode;
     /** The AI may answer comments publicly on its own */
     private Boolean commentAutoReply;
+    private String threadsUserId;
+    private String threadsUsername;
+    private String threadsProfileUrl;
+    private String threadsScope;
+    private Long threadsTokenExpiry;
+    /** X (Twitter) account */
+    private String twitterUserId;
+    private String twitterUsername;
+    private String twitterProfileUrl;
+    private String twitterScope;
+    private Long twitterTokenExpiry;
+    private String tiktokOpenId;
+    private String tiktokUsername;
+    private String tiktokDisplayName;
+    private String tiktokScope;
+    private Long tiktokTokenExpiry;
+    private Long tiktokRefreshExpiry;
+    /** The optional second TikTok login (TikTok API for Business) for comments */
+    private String tiktokBusinessOpenId;
+    private String tiktokBusinessScope;
+    private Long tiktokBusinessTokenExpiry;
     private Contact contact;
     private long lastMessage;
+    /** The connection was granted the permissions to publish; null for inbox types that do not publish */
+    private Boolean publishingAuthorized;
 }

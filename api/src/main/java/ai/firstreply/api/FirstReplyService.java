@@ -194,6 +194,28 @@ public class FirstReplyService {
         return execute(api.getMetricsStatistics(this.organizationId, params));
     }
 
+    /**
+     * Hides, unhides, deletes or likes (Facebook only) a comment of a comment thread on the
+     * platform. Instagram has no like; LinkedIn comments cannot be moderated.
+     *
+     * @param messageId the comment's message
+     * @return the message with its new comment state
+     */
+    public Message moderateComment(String conversationId, String messageId, CommentModerationRequest request) {
+        return execute(api.moderateComment(this.organizationId, conversationId, messageId, request));
+    }
+
+    /**
+     * Answers a comment of a Facebook or Instagram comment thread with a private message to its
+     * author, once per comment and within 7 days of it. The message is stored in the person's
+     * private conversation of the inbox.
+     *
+     * @return the comment
+     */
+    public Message replyToCommentPrivately(String conversationId, PrivateReplyRequest request) {
+        return execute(api.replyToCommentPrivately(this.organizationId, conversationId, request));
+    }
+
     // ── Messages ──────────────────────────────────────────────────────────
 
     public Message getMessage(String messageId) {
@@ -616,6 +638,23 @@ public class FirstReplyService {
     /** Metric snapshots of every target of the post, oldest first. */
     public List<SocialPostMetric> getPostMetrics(String postId) {
         return execute(api.getPostMetrics(this.organizationId, postId));
+    }
+
+    /**
+     * The comment threads on the post, newest first, as conversations (members see the ones
+     * they may see in the inbox).
+     */
+    public ConversationList listPostConversations(String postId, int page, int limit) {
+        return execute(api.listPostConversations(this.organizationId, postId, page, limit));
+    }
+
+    /**
+     * Writes a post from an instruction with the knowledge base ({@code action = "WRITE"}), or
+     * shortens or rewrites a text ({@code SHORTEN}, {@code REWRITE}), for a platform and within
+     * {@code maxLength}. Nothing is saved; {@code tooLong} when the text still exceeds the limit.
+     */
+    public SocialPostWriteResult writePost(SocialPostWriteRequest request) {
+        return execute(api.writePost(this.organizationId, request));
     }
 
     /**

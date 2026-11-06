@@ -2,6 +2,7 @@ package ai.firstreply.api;
 
 import ai.firstreply.api.model.Contact;
 import ai.firstreply.api.model.ContactUpdate;
+import ai.firstreply.api.model.Inbox;
 import ai.firstreply.api.model.Organization;
 import ai.firstreply.api.model.OrganizationMember;
 import ai.firstreply.api.model.TestResult;
@@ -64,5 +65,17 @@ class ObjectMapperTest {
         TestResult result = mapper.readValue("{\"reply\":\"Hi\",\"classificationDto\":{\"name\":\"Billing\"}}", TestResult.class);
 
         assertEquals("Billing", result.getClassification().getName());
+    }
+
+    @Test
+    void readsSocialInboxFields() throws Exception {
+        Inbox inbox = mapper.readValue("{\"type\":\"TIKTOK\",\"publishingEnabled\":true,\"publishingAuthorized\":true,"
+                + "\"tiktokUsername\":\"firstreply\",\"tiktokBusinessTokenExpiry\":1762000000000,\"twitterUserId\":\"42\"}",
+                Inbox.class);
+
+        assertTrue(inbox.getPublishingAuthorized());
+        assertEquals("firstreply", inbox.getTiktokUsername());
+        assertEquals(1762000000000L, inbox.getTiktokBusinessTokenExpiry());
+        assertEquals("42", inbox.getTwitterUserId());
     }
 }
