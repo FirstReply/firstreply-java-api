@@ -14,7 +14,7 @@ public class Message {
     private long lastUpdate;
     private long created;
     private String organizationId;
-    private String inboxId;
+    private String channelId;
     private String conversationId;
     private List<MessageAttachment> attachments;
     private String subject;

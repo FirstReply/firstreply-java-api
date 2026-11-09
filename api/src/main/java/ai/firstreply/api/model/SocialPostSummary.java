@@ -15,7 +15,7 @@ public class SocialPostSummary {
     private String id;
     private String source;
     private String platform;
-    private String inboxId;
+    private String channelId;
     private String text;
     private String permalink;
     private String imageUrl;

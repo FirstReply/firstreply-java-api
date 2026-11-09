@@ -249,32 +249,32 @@ public interface FirstReplyApi {
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 
-    // ── Inboxes ───────────────────────────────────────────────────────────
+    // ── Channels ───────────────────────────────────────────────────────────
 
-    @GET("/v1/organizations/{organizationId}/inboxes")
-    Single<InboxList> listInboxes(
+    @GET("/v1/organizations/{organizationId}/channels")
+    Single<ChannelList> listChannels(
             @Path("organizationId") String organizationId,
             @Query("sort") String sort,
             @Query("order") String order,
             @Query("page") int page,
             @Query("limit") int limit);
 
-    @GET("/v1/organizations/{organizationId}/inboxes/{id}")
-    Single<Inbox> getInbox(
+    @GET("/v1/organizations/{organizationId}/channels/{id}")
+    Single<Channel> getChannel(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 
-    @GET("/v1/organizations/{organizationId}/inboxes/statistics")
-    Single<InboxStatistics> getInboxStatistics(
+    @GET("/v1/organizations/{organizationId}/channels/statistics")
+    Single<ChannelStatistics> getChannelStatistics(
             @Path("organizationId") String organizationId);
 
-    @POST("/v1/organizations/{organizationId}/inboxes/{id}/refresh")
-    Completable refreshInbox(
+    @POST("/v1/organizations/{organizationId}/channels/{id}/refresh")
+    Completable refreshChannel(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 
-    @POST("/v1/organizations/{organizationId}/inboxes/{id}/test")
-    Single<ConnectionTestResult> testInbox(
+    @POST("/v1/organizations/{organizationId}/channels/{id}/test")
+    Single<ConnectionTestResult> testChannel(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 
@@ -531,7 +531,7 @@ public interface FirstReplyApi {
     Single<SocialPostList> listPosts(
             @Path("organizationId") String organizationId,
             @Query("status") String status,
-            @Query("inboxId") String inboxId,
+            @Query("channelId") String channelId,
             @Query("from") Long from,
             @Query("to") Long to,
             @Query("search") String search,
@@ -599,7 +599,7 @@ public interface FirstReplyApi {
             @Path("organizationId") String organizationId,
             @Query("from") Long from,
             @Query("to") Long to,
-            @Query("inboxId") String inboxId);
+            @Query("channelId") String channelId);
 
     @POST("/v1/organizations/{organizationId}/posts/media")
     Single<SocialPostMediaUpload> startPostMediaUpload(

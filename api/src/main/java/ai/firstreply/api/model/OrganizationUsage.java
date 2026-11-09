@@ -12,15 +12,15 @@ public class OrganizationUsage {
     private boolean trial;
     private boolean active;
     private boolean cancelled;
-    private int numInboxes;
-    private int maxInboxes;
+    private int numChannels;
+    private int maxChannels;
     private int numMembers;
     private int maxMembers;
-    private boolean inboxesWarning;
+    private boolean channelsWarning;
     private boolean membersWarning;
-    private boolean inboxesLimitReached;
+    private boolean channelsLimitReached;
     private boolean membersLimitReached;
-    /** Inboxes with Publishing on, counted against their own limit */
+    /** Channels with Publishing on, counted against their own limit */
     private int numPublishingChannels;
     private int maxPublishingChannels;
     private boolean publishingLimitReached;

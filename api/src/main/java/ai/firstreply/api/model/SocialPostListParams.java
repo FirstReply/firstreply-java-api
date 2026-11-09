@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class SocialPostListParams {
     /** One status or several separated by commas, e.g. "SCHEDULED,PENDING_APPROVAL" */
     private String status;
-    private String inboxId;
+    private String channelId;
     private Long from;
     private Long to;
     private String search;

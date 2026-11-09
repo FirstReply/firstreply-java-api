@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class ConversationCreate {
     private String classificationId;
     private String assignedMemberId;
-    private String inboxId;
+    private String channelId;
     private String contactId;
     private String subject;
     private int priority;

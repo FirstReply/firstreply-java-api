@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InboxStatistics {
-    private List<InboxStatisticItem> items;
+public class ChannelList {
+    private List<Channel> items;
+    private ListParams params;
 }

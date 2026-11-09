@@ -21,7 +21,7 @@ public class ConversationListParams {
     private String status;
     private String contactId;
     private List<String> memberIds;
-    private List<String> inboxIds;
+    private List<String> channelIds;
     private int priority = -1;
     private Boolean spam;
     private Long createdFrom;

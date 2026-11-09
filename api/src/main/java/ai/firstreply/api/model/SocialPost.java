@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * A social post with its targets (one per channel, i.e. inbox) and media.
+ * A social post with its targets (one per channel, i.e. channel) and media.
  */
 @Data
 @NoArgsConstructor

@@ -163,7 +163,7 @@ class FirstReplyServiceTest {
     @Test
     void listsPostsWithTheFiltersThatWereSet() throws Exception {
         server.enqueue(new MockResponse().setBody("{\"items\":[{\"id\":\"p1\",\"status\":\"SCHEDULED\","
-                + "\"targets\":[{\"id\":\"t1\",\"inboxId\":\"i1\",\"platform\":\"LINKEDIN\",\"likes\":12,\"views\":null}]}],"
+                + "\"targets\":[{\"id\":\"t1\",\"channelId\":\"i1\",\"platform\":\"LINKEDIN\",\"likes\":12,\"views\":null}]}],"
                 + "\"params\":{\"count\":1,\"page\":1,\"limit\":20}}"));
         SocialPostListParams params = new SocialPostListParams();
         params.setStatus("SCHEDULED,PENDING_APPROVAL");
@@ -198,7 +198,7 @@ class FirstReplyServiceTest {
         assertEquals("POST", request.getMethod());
         assertEquals("/v1/organizations/org1/posts", request.getPath());
         assertEquals("{\"content\":\"Our new feature is live.\",\"scheduledAt\":1762765200000,\"timezone\":\"Europe/Vienna\","
-                + "\"status\":\"SCHEDULED\",\"targets\":[{\"inboxId\":\"i1\"}]}", request.getBody().readUtf8());
+                + "\"status\":\"SCHEDULED\",\"targets\":[{\"channelId\":\"i1\"}]}", request.getBody().readUtf8());
         assertEquals("PENDING_APPROVAL", created.getStatus());
     }
 
@@ -225,7 +225,7 @@ class FirstReplyServiceTest {
     void readsPostAnalytics() throws Exception {
         server.enqueue(new MockResponse().setBody("{\"from\":1759300000000,\"to\":1761900000000,\"posts\":3,\"views\":900,"
                 + "\"saves\":null,\"engagement\":42,\"series\":[{\"day\":\"2026-10-01\",\"posts\":1,\"views\":300}],"
-                + "\"channels\":[{\"inboxId\":\"i1\",\"platform\":\"INSTAGRAM\",\"followers\":1200,\"followersChange\":35}]}"));
+                + "\"channels\":[{\"channelId\":\"i1\",\"platform\":\"INSTAGRAM\",\"followers\":1200,\"followersChange\":35}]}"));
 
         SocialAnalytics analytics = service.getPostAnalytics(1759300000000L, 1761900000000L, null);
 

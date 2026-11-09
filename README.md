@@ -13,7 +13,7 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
 - **Contacts**: search, create, read, update, delete; contact fields
 - **Organizations**: list, read, update, usage; members (list, invite, update,
   remove)
-- **Inboxes**: list, read, statistics, fetch new mail now, test the connection
+- **Channels**: list, read, statistics, fetch new mail now, test the connection
 - **Classifications**: list, create, read, update, delete with reassignment,
   impact, statistics
 - **Knowledge base**: search, create, read, update, delete; knowledge sources
@@ -153,13 +153,13 @@ Double medianFirstReplyMs = metrics.getOverview().getFirstReplyP50Ms(); // null 
 ### Social posts
 
 ```java
-// Schedule a post on a channel (an inbox with publishingEnabled)
+// Schedule a post on a channel (a channel with publishingEnabled)
 SocialPostCreate post = new SocialPostCreate();
 post.setContent("Our new feature is live.");
 post.setStatus("SCHEDULED");
 post.setScheduledAt(Instant.parse("2026-11-10T09:00:00Z").toEpochMilli());
 post.setTimezone("Europe/Vienna");
-post.setTargets(List.of(new SocialPostTargetInput("<inboxId>", null, null)));
+post.setTargets(List.of(new SocialPostTargetInput("<channelId>", null, null)));
 SocialPost scheduled = service.createPost(post); // PENDING_APPROVAL when a manager has to approve it
 
 // How did the last 30 days do?
@@ -176,7 +176,7 @@ ConversationList comments = service.listPostConversations(scheduled.getId(), 1, 
 
 ### Upgrading
 
-- Unreleased: `Inbox` gained `publishingAuthorized` and the Threads
+- Unreleased: `Channel` gained `publishingAuthorized` and the Threads
   (`threads*`), X (`twitter*`) and TikTok (`tiktok*`) fields, and
   `Conversation` the comment thread fields (`kind`, `externalThreadId`,
   `externalPostId`, `socialPostId`, `socialPost`), so their Lombok all-args

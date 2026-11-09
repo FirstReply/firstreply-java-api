@@ -208,7 +208,7 @@ public class FirstReplyService {
     /**
      * Answers a comment of a Facebook or Instagram comment thread with a private message to its
      * author, once per comment and within 7 days of it. The message is stored in the person's
-     * private conversation of the inbox.
+     * private conversation of the channel.
      *
      * @return the comment
      */
@@ -235,7 +235,7 @@ public class FirstReplyService {
         return execute(api.updateMessage(this.organizationId, messageId, request));
     }
 
-    /** Sends a draft to the customer through the conversation's inbox. */
+    /** Sends a draft to the customer through the conversation's channel. */
     public Message sendMessage(String messageId) {
         return execute(api.sendMessage(this.organizationId, messageId));
     }
@@ -271,7 +271,7 @@ public class FirstReplyService {
         return execute(api.updateOrganization(organizationId, request));
     }
 
-    /** Plan, inbox and member limits of an organization and how much of them is used. */
+    /** Plan, channel and member limits of an organization and how much of them is used. */
     public OrganizationUsage getOrganizationUsage(String organizationId) {
         return execute(api.getOrganizationUsage(organizationId));
     }
@@ -324,29 +324,29 @@ public class FirstReplyService {
         execute(api.deleteApiKey(this.organizationId, apiKeyId));
     }
 
-    // ── Inboxes ───────────────────────────────────────────────────────────
+    // ── Channels ───────────────────────────────────────────────────────────
 
-    public InboxList listInboxes(String sort, String order, int page, int limit) {
-        return execute(api.listInboxes(this.organizationId, sort, order, page, limit));
+    public ChannelList listChannels(String sort, String order, int page, int limit) {
+        return execute(api.listChannels(this.organizationId, sort, order, page, limit));
     }
 
-    public Inbox getInbox(String inboxId) {
-        return execute(api.getInbox(this.organizationId, inboxId));
+    public Channel getChannel(String channelId) {
+        return execute(api.getChannel(this.organizationId, channelId));
     }
 
-    /** Conversation counts per inbox. */
-    public InboxStatistics getInboxStatistics() {
-        return execute(api.getInboxStatistics(this.organizationId));
+    /** Conversation counts per channel. */
+    public ChannelStatistics getChannelStatistics() {
+        return execute(api.getChannelStatistics(this.organizationId));
     }
 
-    /** Fetches new messages of the inbox now instead of waiting for the next scheduled run. */
-    public void refreshInbox(String inboxId) {
-        execute(api.refreshInbox(this.organizationId, inboxId));
+    /** Fetches new messages of the channel now instead of waiting for the next scheduled run. */
+    public void refreshChannel(String channelId) {
+        execute(api.refreshChannel(this.organizationId, channelId));
     }
 
-    /** Tests the stored connection settings of the inbox against its platform. */
-    public ConnectionTestResult testInbox(String inboxId) {
-        return execute(api.testInbox(this.organizationId, inboxId));
+    /** Tests the stored connection settings of the channel against its platform. */
+    public ConnectionTestResult testChannel(String channelId) {
+        return execute(api.testChannel(this.organizationId, channelId));
     }
 
     // ── Classifications ───────────────────────────────────────────────────
@@ -581,7 +581,7 @@ public class FirstReplyService {
 
     /** Lists posts, newest first ({@code order = "asc"} for calendar order). */
     public SocialPostList listPosts(SocialPostListParams params) {
-        return execute(api.listPosts(this.organizationId, params.getStatus(), params.getInboxId(), params.getFrom(),
+        return execute(api.listPosts(this.organizationId, params.getStatus(), params.getChannelId(), params.getFrom(),
                 params.getTo(), params.getSearch(), params.getOrder(), params.getPage(), params.getLimit()));
     }
 
@@ -642,7 +642,7 @@ public class FirstReplyService {
 
     /**
      * The comment threads on the post, newest first, as conversations (members see the ones
-     * they may see in the inbox).
+     * they may see in the channel).
      */
     public ConversationList listPostConversations(String postId, int page, int limit) {
         return execute(api.listPostConversations(this.organizationId, postId, page, limit));
@@ -662,10 +662,10 @@ public class FirstReplyService {
      *
      * @param from    epoch millis, or {@code null} for 30 days before {@code to}
      * @param to      epoch millis, or {@code null} for now; the period is at most one year
-     * @param inboxId only this channel, or {@code null} for all
+     * @param channelId only this channel, or {@code null} for all
      */
-    public SocialAnalytics getPostAnalytics(Long from, Long to, String inboxId) {
-        return execute(api.getPostAnalytics(this.organizationId, from, to, inboxId));
+    public SocialAnalytics getPostAnalytics(Long from, Long to, String channelId) {
+        return execute(api.getPostAnalytics(this.organizationId, from, to, channelId));
     }
 
     /**

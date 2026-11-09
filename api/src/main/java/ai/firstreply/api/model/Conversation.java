@@ -23,7 +23,7 @@ public class Conversation {
     private long assignedAt;
     private String assignedBy;
     private String lastMessageId;
-    private String inboxId;
+    private String channelId;
     private String subject;
     private String language;
     private int status;

@@ -27,6 +27,6 @@ public class Contact {
     private String linkedinUserId;
     private String platformMetadata;
     private List<ContactFieldValue> fields;
-    private Inbox inbox;
+    private Channel channel;
     private int conversationCount;
 }

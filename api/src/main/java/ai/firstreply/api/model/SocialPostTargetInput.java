@@ -5,14 +5,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * A channel of a post being saved: an inbox with Publishing on, optionally with its own text
+ * A channel of a post being saved: a channel with Publishing on, optionally with its own text
  * and platform settings (JSON).
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class SocialPostTargetInput {
-    private String inboxId;
+    private String channelId;
     private String content;
     private String settings;
 }

@@ -5,13 +5,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * One channel (inbox) in the analytics period.
+ * One channel in the analytics period.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class SocialChannelAnalytics {
-    private String inboxId;
+    private String channelId;
     private String platform;
     private String name;
     private int posts;

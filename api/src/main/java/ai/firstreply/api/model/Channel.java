@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Inbox {
+public class Channel {
     private String id;
     private long lastUpdate;
     private long created;
@@ -62,7 +62,7 @@ public class Inbox {
     private String webchatLauncherLabel;
     private Boolean webchatRequireContact;
     private String webchatAllowedDomains;
-    /** Posts can target this inbox (social channels only) */
+    /** Posts can target this channel (social channels only) */
     private Boolean publishingEnabled;
     /** Which comments on posts open conversations: ALL, QUESTIONS or NONE */
     private String commentMode;
@@ -91,6 +91,6 @@ public class Inbox {
     private Long tiktokBusinessTokenExpiry;
     private Contact contact;
     private long lastMessage;
-    /** The connection was granted the permissions to publish; null for inbox types that do not publish */
+    /** The connection was granted the permissions to publish; null for channel types that do not publish */
     private Boolean publishingAuthorized;
 }

@@ -46,9 +46,9 @@ public interface WebhookEventType {
     String PROMPT_UPDATE = "prompt.update";
     String PROMPT_DELETE = "prompt.delete";
 
-    String INBOX_CREATE = "inbox.create";
-    String INBOX_UPDATE = "inbox.update";
-    String INBOX_DELETE = "inbox.delete";
+    String CHANNEL_CREATE = "channel.create";
+    String CHANNEL_UPDATE = "channel.update";
+    String CHANNEL_DELETE = "channel.delete";
 
     String POST_CREATE = "post.create";
     /** Carries the post's status, so published and failed posts arrive as updates. */

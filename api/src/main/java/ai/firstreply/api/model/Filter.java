@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Filter {
-    private List<String> inboxIds;
+    private List<String> channelIds;
     private List<String> classificationIds;
     private List<String> memberIds;
     private String search;

@@ -16,10 +16,10 @@ public class Organization {
     private String description;
     private int color;
     private String publicId;
-    private int numInboxes;
+    private int numChannels;
     private int numMembers;
     private String plan;
-    private int maxInboxes;
+    private int maxChannels;
     private int maxMembers;
     private int maxPublishingChannels;
     /** Members' posts wait for a manager's approval before they are published */

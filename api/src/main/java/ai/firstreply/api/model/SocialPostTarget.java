@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * One post on one channel (inbox), with its publish state and latest metrics. A metric the
+ * One post on one channel, with its publish state and latest metrics. A metric the
  * platform does not offer is null.
  */
 @Data
@@ -14,8 +14,8 @@ import lombok.NoArgsConstructor;
 public class SocialPostTarget {
     private String id;
     private String postId;
-    private String inboxId;
-    /** Inbox type: MESSENGER (Facebook Page), INSTAGRAM, LINKEDIN, ... */
+    private String channelId;
+    /** Channel type: MESSENGER (Facebook Page), INSTAGRAM, LINKEDIN, ... */
     private String platform;
     /** Per-platform text; null means the post's base text */
     private String content;
