@@ -18,7 +18,7 @@ public class SocialPostWriteRequest {
     private String text;
     /** What the post is about, or how to change the text */
     private String instruction;
-    /** Channel type the text is for (e.g. MESSENGER, INSTAGRAM, LINKEDIN), null for any platform */
+    /** Channel type the text is for (e.g. MESSENGER, INSTAGRAM, LINKEDIN, BLUESKY), null for any platform */
     private String platform;
     /** Character limit to stay within */
     private Integer maxLength;

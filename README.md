@@ -13,7 +13,13 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
 - **Contacts**: search, create, read, update, delete; contact fields
 - **Organizations**: list, read, update, usage; members (list, invite, update,
   remove)
-- **Channels**: list, read, statistics, fetch new mail now, test the connection
+- **Channels**: list, read, statistics, fetch new messages now, test the
+  connection; create a channel from settings or credentials (email, website
+  chat, Bluesky, Telegram, App Store, Google Play), start or renew the login
+  of an account that is connected on its platform (Facebook Page, Instagram,
+  LinkedIn, WhatsApp, Threads, X, TikTok, YouTube, Google Business Profile,
+  Mastodon), change a channel's settings, the Google Play service account
+  and what a TikTok account may post
 - **Classifications**: list, create, read, update, delete with reassignment,
   impact, statistics
 - **Knowledge base**: search, create, read, update, delete; knowledge sources
@@ -57,7 +63,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'ai.firstreply:firstreply-api:0.2.0'
+    implementation 'ai.firstreply:firstreply-api:0.3.0'
 }
 ```
 
@@ -74,7 +80,7 @@ dependencies {
 <dependency>
     <groupId>ai.firstreply</groupId>
     <artifactId>firstreply-api</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
 </dependency>
 ```
 
@@ -84,7 +90,7 @@ dependencies {
 ./gradlew publishToMavenLocal
 ```
 
-Then depend on `ai.firstreply:firstreply-api:0.2.0` with `mavenLocal()` in
+Then depend on `ai.firstreply:firstreply-api:0.3.0` with `mavenLocal()` in
 your repositories.
 
 ## Authentication
@@ -174,15 +180,44 @@ SocialPostWriteResult text = service.writePost(
 ConversationList comments = service.listPostConversations(scheduled.getId(), 1, 50);
 ```
 
+### Channels
+
+```java
+// A Bluesky account is created from its handle and an app password
+ChannelCreate bluesky = new ChannelCreate();
+bluesky.setType("BLUESKY");
+bluesky.setName("Bluesky");
+bluesky.setBlueskyHandle("example.bsky.social");
+bluesky.setBlueskyAppPassword("<app password>");
+Channel channel = service.createChannel(bluesky);
+
+// Accounts that sign in on their platform start with a link the user opens
+// in a browser where they are signed in to FirstReply (valid for 10 minutes)
+ChannelConnectRequest connect = new ChannelConnectRequest();
+connect.setPlatform("MASTODON");
+connect.setChannelName("Mastodon");
+connect.setServer("mastodon.social");
+String link = service.connectChannel(connect).getAuthUrl();
+
+// Let posts target the channel; fields left null keep their value
+ChannelUpdate update = new ChannelUpdate();
+update.setPublishingEnabled(true);
+service.updateChannel(channel.getId(), update);
+```
+
 ### Upgrading
 
-- Unreleased: `Channel` gained `publishingAuthorized` and the Threads
-  (`threads*`), X (`twitter*`) and TikTok (`tiktok*`) fields, and
-  `Conversation` the comment thread fields (`kind`, `externalThreadId`,
-  `externalPostId`, `socialPostId`, `socialPost`), so their Lombok all-args
-  constructors take more parameters, in a new order. Code calling those
-  constructors no longer compiles: use the no-args constructor and the
-  setters.
+- 0.3.0: `Channel` gained `publishingAuthorized` and the Threads
+  (`threads*`), X (`twitter*`), TikTok (`tiktok*`), YouTube (`youtube*`),
+  Google Business Profile (`googleBusiness*`), Bluesky (`bluesky*`),
+  Mastodon (`mastodon*`) and Telegram (`telegram*`) fields, `Conversation`
+  the comment thread fields (`kind`, `externalThreadId`, `externalPostId`,
+  `socialPostId`, `socialPost`), `ConversationListParams` the filters `kind`
+  and `socialPostId`, `SocialPost` `authorName` and `SocialPostTarget`
+  `externalImageUrl`, so their Lombok all-args constructors take more
+  parameters, in a new order. Code calling those constructors no longer
+  compiles: use the no-args constructor and the setters. `TranslateRequest`
+  gained `maxLength` and keeps its two-argument constructor.
 
 ### Managing API keys
 

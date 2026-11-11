@@ -16,6 +16,8 @@ public class SocialPost {
     private String id;
     private String organizationId;
     private String authorId;
+    /** Display name of the author */
+    private String authorName;
     /** DRAFT, PENDING_APPROVAL, SCHEDULED, PUBLISHING, PUBLISHED, PARTIALLY_FAILED or FAILED */
     private String status;
     /** Base text; targets may override it */

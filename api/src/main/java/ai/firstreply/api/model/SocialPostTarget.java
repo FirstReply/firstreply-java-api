@@ -15,7 +15,10 @@ public class SocialPostTarget {
     private String id;
     private String postId;
     private String channelId;
-    /** Channel type: MESSENGER (Facebook Page), INSTAGRAM, LINKEDIN, ... */
+    /**
+     * Channel type: MESSENGER (Facebook Page), INSTAGRAM, LINKEDIN, THREADS, X, TIKTOK, YOUTUBE,
+     * GOOGLE_BUSINESS, BLUESKY, MASTODON or TELEGRAM
+     */
     private String platform;
     /** Per-platform text; null means the post's base text */
     private String content;
@@ -25,6 +28,8 @@ public class SocialPostTarget {
     private String status;
     private String externalPostId;
     private String externalUrl;
+    /** The post's image as the platform serves it, for IMPORTED posts without media of their own */
+    private String externalImageUrl;
     private Long publishedAt;
     private String error;
     private int attempts;

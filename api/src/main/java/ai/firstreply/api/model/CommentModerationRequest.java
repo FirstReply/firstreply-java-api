@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentModerationRequest {
-    /** HIDE, UNHIDE, DELETE or LIKE (Facebook only) */
+    /** HIDE, UNHIDE, DELETE or LIKE; which of them a platform offers: {@code FirstReplyService#moderateComment} */
     private String action;
 }

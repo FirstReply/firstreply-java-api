@@ -1,5 +1,11 @@
 package ai.firstreply.api;
 
+import ai.firstreply.api.model.Channel;
+import ai.firstreply.api.model.ChannelConnectRequest;
+import ai.firstreply.api.model.ChannelConnectResult;
+import ai.firstreply.api.model.ChannelCreate;
+import ai.firstreply.api.model.ChannelReconnectRequest;
+import ai.firstreply.api.model.ChannelUpdate;
 import ai.firstreply.api.model.CommentModerationRequest;
 import ai.firstreply.api.model.Conversation;
 import ai.firstreply.api.model.ConversationList;
@@ -20,6 +26,8 @@ import ai.firstreply.api.model.SocialPostTarget;
 import ai.firstreply.api.model.SocialPostTargetInput;
 import ai.firstreply.api.model.SocialPostWriteRequest;
 import ai.firstreply.api.model.SocialPostWriteResult;
+import ai.firstreply.api.model.TikTokCreatorInfo;
+import ai.firstreply.api.model.TranslateRequest;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -297,5 +305,102 @@ class FirstReplyServiceTest {
         assertEquals("POST", privateReply.getMethod());
         assertEquals("/v1/organizations/org1/conversations/c1/private-reply", privateReply.getPath());
         assertEquals("{\"text\":\"We sent you the details.\",\"messageId\":\"m1\"}", privateReply.getBody().readUtf8());
+    }
+
+    @Test
+    void createsChannelWithTheFieldsOfItsType() throws Exception {
+        server.enqueue(new MockResponse().setBody(
+                "{\"id\":\"ch1\",\"type\":\"BLUESKY\",\"blueskyHandle\":\"example.bsky.social\",\"blueskyDid\":\"did:plc:abc\"}"));
+
+        ChannelCreate create = new ChannelCreate();
+        create.setType("BLUESKY");
+        create.setName("Bluesky");
+        create.setBlueskyHandle("example.bsky.social");
+        create.setBlueskyAppPassword("abcd-efgh-ijkl-mnop");
+        Channel channel = service.createChannel(create);
+
+        RecordedRequest request = server.takeRequest();
+        assertEquals("POST", request.getMethod());
+        assertEquals("/v1/organizations/org1/channels", request.getPath());
+        assertEquals("{\"type\":\"BLUESKY\",\"name\":\"Bluesky\",\"blueskyHandle\":\"example.bsky.social\","
+                + "\"blueskyAppPassword\":\"abcd-efgh-ijkl-mnop\"}", request.getBody().readUtf8());
+        assertEquals("did:plc:abc", channel.getBlueskyDid());
+    }
+
+    @Test
+    void updatesChannelOnTopOfTheStoredOne() throws Exception {
+        server.enqueue(new MockResponse().setBody(
+                "{\"id\":\"ch1\",\"type\":\"MASTODON\",\"name\":\"Mastodon\",\"activated\":true,"
+                        + "\"mastodonAccount\":\"team@mastodon.social\",\"publishingEnabled\":false}"));
+        server.enqueue(new MockResponse().setBody("{\"id\":\"ch1\",\"publishingEnabled\":true}"));
+
+        ChannelUpdate update = new ChannelUpdate();
+        update.setPublishingEnabled(true);
+        Channel channel = service.updateChannel("ch1", update);
+
+        assertEquals("GET", server.takeRequest().getMethod());
+        RecordedRequest put = server.takeRequest();
+        assertEquals("PUT", put.getMethod());
+        assertEquals("/v1/organizations/org1/channels/ch1", put.getPath());
+        String body = put.getBody().readUtf8();
+        assertTrue(body.contains("\"publishingEnabled\":true"), body);
+        assertTrue(body.contains("\"type\":\"MASTODON\""), body);
+        assertTrue(body.contains("\"mastodonAccount\":\"team@mastodon.social\""), body);
+        assertTrue(body.contains("\"name\":\"Mastodon\""), body);
+        assertTrue(body.contains("\"activated\":true"), body);
+        assertTrue(channel.getPublishingEnabled());
+    }
+
+    @Test
+    void startsChannelLogins() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"authUrl\":\"https://mastodon.social/oauth/authorize?x=1\",\"state\":\"s1\"}"));
+        server.enqueue(new MockResponse().setBody("{\"authUrl\":\"https://www.facebook.com/dialog/oauth?x=1\"}"));
+
+        ChannelConnectRequest connect = new ChannelConnectRequest();
+        connect.setPlatform("MASTODON");
+        connect.setChannelName("Mastodon");
+        connect.setServer("mastodon.social");
+        ChannelConnectResult link = service.connectChannel(connect);
+        ChannelReconnectRequest reconnect = new ChannelReconnectRequest();
+        reconnect.setCapabilities(List.of("PUBLISHING"));
+        service.reconnectChannel("ch1", reconnect);
+
+        RecordedRequest init = server.takeRequest();
+        assertEquals("/v1/organizations/org1/channels/oauth/init", init.getPath());
+        assertEquals("{\"platform\":\"MASTODON\",\"channelName\":\"Mastodon\",\"server\":\"mastodon.social\"}", init.getBody().readUtf8());
+        assertEquals("https://mastodon.social/oauth/authorize?x=1", link.getAuthUrl());
+        RecordedRequest again = server.takeRequest();
+        assertEquals("POST", again.getMethod());
+        assertEquals("/v1/organizations/org1/channels/ch1/oauth/reconnect", again.getPath());
+        assertEquals("{\"capabilities\":[\"PUBLISHING\"]}", again.getBody().readUtf8());
+    }
+
+    @Test
+    void readsPlayStoreServiceAccountAndTikTokCreatorInfo() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"email\":\"fr-org1@example.iam.gserviceaccount.com\"}"));
+        server.enqueue(new MockResponse().setBody("{\"privacyLevelOptions\":[\"SELF_ONLY\"],\"canPost\":true,\"audited\":false}"));
+
+        assertEquals("fr-org1@example.iam.gserviceaccount.com", service.getPlayStoreServiceAccount().getEmail());
+        TikTokCreatorInfo info = service.getTikTokCreatorInfo("ch1");
+
+        RecordedRequest account = server.takeRequest();
+        assertEquals("POST", account.getMethod());
+        assertEquals("/v1/organizations/org1/channels/playstore/service-account", account.getPath());
+        assertEquals("/v1/organizations/org1/channels/ch1/tiktok/creator-info", server.takeRequest().getPath());
+        assertEquals(List.of("SELF_ONLY"), info.getPrivacyLevelOptions());
+        assertTrue(info.isCanPost());
+        assertFalse(info.isAudited());
+    }
+
+    @Test
+    void translatesWithinALimit() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"translation\":\"Danke\",\"translated\":true}"));
+        server.enqueue(new MockResponse().setBody("{\"translation\":\"Danke\",\"translated\":true}"));
+
+        service.translate(new TranslateRequest("de", "Thanks"));
+        service.translate(new TranslateRequest("de", "Thanks", 300));
+
+        assertEquals("{\"language\":\"de\",\"text\":\"Thanks\"}", server.takeRequest().getBody().readUtf8());
+        assertEquals("{\"language\":\"de\",\"text\":\"Thanks\",\"maxLength\":300}", server.takeRequest().getBody().readUtf8());
     }
 }

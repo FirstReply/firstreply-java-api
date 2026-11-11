@@ -2,6 +2,7 @@ package ai.firstreply.api;
 
 import ai.firstreply.api.model.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Completable;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -195,8 +197,10 @@ public class FirstReplyService {
     }
 
     /**
-     * Hides, unhides, deletes or likes (Facebook only) a comment of a comment thread on the
-     * platform. Instagram has no like; LinkedIn comments cannot be moderated.
+     * Hides, unhides, deletes or likes a comment of a comment thread on the platform. What a
+     * platform offers: Facebook all four; Instagram HIDE, UNHIDE and DELETE; TikTok HIDE, UNHIDE
+     * and LIKE; Threads and X HIDE and UNHIDE; Telegram DELETE and LIKE; YouTube DELETE; Bluesky
+     * and Mastodon LIKE; LinkedIn none. Anything else is refused with 400.
      *
      * @param messageId the comment's message
      * @return the message with its new comment state
@@ -332,6 +336,56 @@ public class FirstReplyService {
 
     public Channel getChannel(String channelId) {
         return execute(api.getChannel(this.organizationId, channelId));
+    }
+
+    /**
+     * Creates a channel that is set up with settings or credentials (EMAIL, WEBCHAT, BLUESKY,
+     * TELEGRAM, APPSTORE, PLAYSTORE). FirstReply checks the credentials with the platform before
+     * it saves. A website chat needs none; the result carries the {@code webchatKey} of its embed
+     * snippet. Needs manager rights and a free channel in the plan.
+     */
+    public Channel createChannel(ChannelCreate request) {
+        return execute(api.createChannel(this.organizationId, request));
+    }
+
+    /**
+     * Changes a channel: its name, whether it is active, publishing and comment handling of a
+     * social account, or the settings and credentials of its type. Only the fields that are set
+     * change. The API expects the whole channel, so this reads the channel first and sends it
+     * back with the changes.
+     */
+    public Channel updateChannel(String channelId, ChannelUpdate request) {
+        ObjectMapper mapper = defaultObjectMapper();
+        Map<String, Object> channel = mapper.convertValue(getChannel(channelId), new TypeReference<Map<String, Object>>() {
+        });
+        channel.putAll(mapper.convertValue(request, new TypeReference<Map<String, Object>>() {
+        }));
+        return execute(api.updateChannel(this.organizationId, channelId, channel));
+    }
+
+    /**
+     * Starts connecting an account that is connected by signing in on the platform. Nothing is
+     * created yet: the user opens the returned {@code authUrl} (valid for 10 minutes) in a
+     * browser where they are signed in to FirstReply and finishes the login there. Afterwards
+     * {@link Channel#getPublishingAuthorized()} tells whether posts are allowed.
+     */
+    public ChannelConnectResult connectChannel(ChannelConnectRequest request) {
+        return execute(api.connectChannel(this.organizationId, request));
+    }
+
+    /** Starts a new login for a connected channel; see {@link #connectChannel(ChannelConnectRequest)}. */
+    public ChannelConnectResult reconnectChannel(String channelId, ChannelReconnectRequest request) {
+        return execute(api.reconnectChannel(this.organizationId, channelId, request));
+    }
+
+    /** The organization's Google service account for Google Play reviews, created on the first call. */
+    public PlayStoreServiceAccount getPlayStoreServiceAccount() {
+        return execute(api.getPlayStoreServiceAccount(this.organizationId));
+    }
+
+    /** What a TikTok channel may post right now, read from TikTok. */
+    public TikTokCreatorInfo getTikTokCreatorInfo(String channelId) {
+        return execute(api.getTikTokCreatorInfo(this.organizationId, channelId));
     }
 
     /** Conversation counts per channel. */

@@ -6,6 +6,7 @@ import io.reactivex.rxjava3.core.Single;
 import retrofit2.http.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface FirstReplyApi {
 
@@ -261,6 +262,37 @@ public interface FirstReplyApi {
 
     @GET("/v1/organizations/{organizationId}/channels/{id}")
     Single<Channel> getChannel(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @POST("/v1/organizations/{organizationId}/channels")
+    Single<Channel> createChannel(
+            @Path("organizationId") String organizationId,
+            @Body ChannelCreate request);
+
+    @PUT("/v1/organizations/{organizationId}/channels/{id}")
+    Single<Channel> updateChannel(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Body Map<String, Object> channel);
+
+    @POST("/v1/organizations/{organizationId}/channels/oauth/init")
+    Single<ChannelConnectResult> connectChannel(
+            @Path("organizationId") String organizationId,
+            @Body ChannelConnectRequest request);
+
+    @POST("/v1/organizations/{organizationId}/channels/{id}/oauth/reconnect")
+    Single<ChannelConnectResult> reconnectChannel(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Body ChannelReconnectRequest request);
+
+    @POST("/v1/organizations/{organizationId}/channels/playstore/service-account")
+    Single<PlayStoreServiceAccount> getPlayStoreServiceAccount(
+            @Path("organizationId") String organizationId);
+
+    @GET("/v1/organizations/{organizationId}/channels/{id}/tiktok/creator-info")
+    Single<TikTokCreatorInfo> getTikTokCreatorInfo(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 

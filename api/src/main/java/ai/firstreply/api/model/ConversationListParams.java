@@ -28,4 +28,8 @@ public class ConversationListParams {
     private Long createdTo;
     private Long lastUpdateFrom;
     private Long lastUpdateTo;
+    /** COMMENT: only comment threads on social posts; MESSAGE: only everything else */
+    private String kind;
+    /** Only the comment threads of this post */
+    private String socialPostId;
 }

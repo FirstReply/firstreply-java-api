@@ -10,4 +10,10 @@ import lombok.NoArgsConstructor;
 public class TranslateRequest {
     private String language;
     private String text;
+    /** Most characters the translation may have (the reply limit of the channel), null for no limit */
+    private Integer maxLength;
+
+    public TranslateRequest(String language, String text) {
+        this(language, text, null);
+    }
 }
