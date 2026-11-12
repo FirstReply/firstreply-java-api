@@ -4,14 +4,20 @@ import ai.firstreply.api.model.Channel;
 import ai.firstreply.api.model.ChannelConnectRequest;
 import ai.firstreply.api.model.ChannelConnectResult;
 import ai.firstreply.api.model.ChannelCreate;
+import ai.firstreply.api.model.ChannelOAuthStatus;
 import ai.firstreply.api.model.ChannelReconnectRequest;
 import ai.firstreply.api.model.ChannelUpdate;
 import ai.firstreply.api.model.CommentModerationRequest;
+import ai.firstreply.api.model.ContactImportResult;
 import ai.firstreply.api.model.Conversation;
 import ai.firstreply.api.model.ConversationList;
 import ai.firstreply.api.model.ConversationStatisticsParams;
+import ai.firstreply.api.model.KnowledgeSourceCreate;
+import ai.firstreply.api.model.KnowledgeSourceUpdate;
 import ai.firstreply.api.model.Message;
+import ai.firstreply.api.model.MessageAttachment;
 import ai.firstreply.api.model.MessageCreate;
+import ai.firstreply.api.model.MessageListParams;
 import ai.firstreply.api.model.MetricsStatistics;
 import ai.firstreply.api.model.OrganizationMemberUpdate;
 import ai.firstreply.api.model.PrivateReplyRequest;
@@ -22,6 +28,7 @@ import ai.firstreply.api.model.SocialPostCreate;
 import ai.firstreply.api.model.SocialPostList;
 import ai.firstreply.api.model.SocialPostListParams;
 import ai.firstreply.api.model.SocialPostMetric;
+import ai.firstreply.api.model.SocialPostStatistics;
 import ai.firstreply.api.model.SocialPostTarget;
 import ai.firstreply.api.model.SocialPostTargetInput;
 import ai.firstreply.api.model.SocialPostWriteRequest;
@@ -34,8 +41,12 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 
@@ -402,5 +413,119 @@ class FirstReplyServiceTest {
 
         assertEquals("{\"language\":\"de\",\"text\":\"Thanks\"}", server.takeRequest().getBody().readUtf8());
         assertEquals("{\"language\":\"de\",\"text\":\"Thanks\",\"maxLength\":300}", server.takeRequest().getBody().readUtf8());
+    }
+
+    @Test
+    void createsUpdatesAndDeletesKnowledgeSources() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"id\":\"s1\",\"sourceType\":\"WEBSITE\",\"syncEnabled\":true}"));
+        server.enqueue(new MockResponse().setBody("{\"id\":\"s1\",\"name\":\"Docs\",\"syncEnabled\":false}"));
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        KnowledgeSourceCreate create = new KnowledgeSourceCreate();
+        create.setName("Help center");
+        create.setSourceType("WEBSITE");
+        create.setConfiguration("{\"baseUrl\":\"https://example.com\"}");
+        assertTrue(service.createKnowledgeSource(create).isSyncEnabled());
+        KnowledgeSourceUpdate update = new KnowledgeSourceUpdate();
+        update.setSyncEnabled(false);
+        assertEquals("Docs", service.updateKnowledgeSource("s1", update).getName());
+        service.deleteKnowledgeSource("s1");
+
+        RecordedRequest created = server.takeRequest();
+        assertEquals("POST", created.getMethod());
+        assertEquals("/v1/organizations/org1/knowledge-sources", created.getPath());
+        // Unset fields are left out, so the API's defaults (sync on, every 60 minutes) apply
+        assertEquals("{\"name\":\"Help center\",\"sourceType\":\"WEBSITE\",\"configuration\":\"{\\\"baseUrl\\\":\\\"https://example.com\\\"}\"}",
+                created.getBody().readUtf8());
+        RecordedRequest updated = server.takeRequest();
+        assertEquals("PUT", updated.getMethod());
+        assertEquals("/v1/organizations/org1/knowledge-sources/s1", updated.getPath());
+        assertEquals("{\"syncEnabled\":false}", updated.getBody().readUtf8());
+        RecordedRequest deleted = server.takeRequest();
+        assertEquals("DELETE", deleted.getMethod());
+        assertEquals("/v1/organizations/org1/knowledge-sources/s1", deleted.getPath());
+    }
+
+    @Test
+    void readsPostStatistics() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"drafts\":2,\"pendingApproval\":1,\"scheduled\":4,\"published\":9,\"failed\":0,"
+                + "\"nextScheduledAt\":1762000000000}"));
+        server.enqueue(new MockResponse().setBody("{\"drafts\":0,\"nextScheduledAt\":null}"));
+
+        SocialPostStatistics statistics = service.getPostStatistics(null);
+        assertNull(service.getPostStatistics("ch1").getNextScheduledAt());
+
+        assertEquals("/v1/organizations/org1/posts/statistics", server.takeRequest().getPath());
+        assertEquals("/v1/organizations/org1/posts/statistics?channelId=ch1", server.takeRequest().getPath());
+        assertEquals(4, statistics.getScheduled());
+        assertEquals(1762000000000L, statistics.getNextScheduledAt());
+    }
+
+    @Test
+    void uploadsAttachment(@TempDir Path directory) throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"name\":\"invoice.pdf\",\"size\":7,\"mime\":\"application/pdf\","
+                + "\"file\":\"20261112100000_ab12_invoice.pdf\"}"));
+        Path file = Files.write(directory.resolve("invoice.pdf"), "PDFDATA".getBytes(StandardCharsets.UTF_8));
+
+        MessageAttachment attachment = service.uploadAttachment(file.toFile(), "application/pdf");
+
+        RecordedRequest upload = server.takeRequest();
+        assertEquals("POST", upload.getMethod());
+        assertEquals("/v1/organizations/org1/attachment", upload.getPath());
+        assertTrue(upload.getHeader("Content-Type").startsWith("multipart/form-data; boundary="));
+        String body = upload.getBody().readUtf8();
+        assertTrue(body.contains("name=\"file\"; filename=\"invoice.pdf\""), body);
+        assertTrue(body.contains("Content-Type: application/pdf"), body);
+        assertTrue(body.contains("PDFDATA"), body);
+        assertTrue(body.contains("name=\"fileSize\""), body);
+        assertEquals("20261112100000_ab12_invoice.pdf", attachment.getFile());
+        assertEquals(7, attachment.getSize());
+    }
+
+    @Test
+    void importsContactsAndExportsMessagesAsCsv() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"created\":1,\"updated\":0,\"skipped\":1,\"errorCount\":1,"
+                + "\"errors\":[{\"line\":3,\"message\":\"Invalid email\"}]}"));
+        server.enqueue(new MockResponse().setHeader("Content-Type", "text/csv").setBody("id,subject\nm1,Hello\n"));
+
+        ContactImportResult result = service.importContacts("email,name\na@example.com,Ada\n", true);
+        MessageListParams params = new MessageListParams();
+        params.setConversationId("c1");
+        String csv = service.exportMessages(params);
+
+        RecordedRequest imported = server.takeRequest();
+        assertEquals("/v1/organizations/org1/contacts/import?updateExisting=true", imported.getPath());
+        assertEquals("text/csv; charset=utf-8", imported.getHeader("Content-Type"));
+        assertEquals("email,name\na@example.com,Ada\n", imported.getBody().readUtf8());
+        assertEquals(1, result.getCreated());
+        assertEquals(3, result.getErrors().get(0).getLine());
+        RecordedRequest exported = server.takeRequest();
+        assertEquals("POST", exported.getMethod());
+        assertEquals("/v1/organizations/org1/messages/export", exported.getPath());
+        assertTrue(exported.getBody().readUtf8().contains("\"conversationId\":\"c1\""));
+        assertEquals("id,subject\nm1,Hello\n", csv);
+    }
+
+    @Test
+    void readsAndDisconnectsChannelLoginAndDeletesChannel() throws Exception {
+        server.enqueue(new MockResponse().setBody("{\"connected\":true,\"status\":\"CONNECTED\",\"platform\":\"LINKEDIN\","
+                + "\"requiresReauth\":false,\"accountName\":\"Example\"}"));
+        server.enqueue(new MockResponse().setBody("{\"success\": true}"));
+        server.enqueue(new MockResponse().setResponseCode(200));
+
+        ChannelOAuthStatus status = service.getChannelOAuthStatus("ch1");
+        service.disconnectChannelOAuth("ch1", false);
+        service.deleteChannel("ch1");
+
+        assertEquals("/v1/organizations/org1/channels/ch1/oauth/status", server.takeRequest().getPath());
+        assertTrue(status.isConnected());
+        assertEquals("CONNECTED", status.getStatus());
+        assertNull(status.getTokenExpiryDate());
+        RecordedRequest disconnect = server.takeRequest();
+        assertEquals("POST", disconnect.getMethod());
+        assertEquals("/v1/organizations/org1/channels/ch1/oauth/disconnect?revokeToken=false", disconnect.getPath());
+        RecordedRequest delete = server.takeRequest();
+        assertEquals("DELETE", delete.getMethod());
+        assertEquals("/v1/organizations/org1/channels/ch1", delete.getPath());
     }
 }

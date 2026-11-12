@@ -3,6 +3,9 @@ package ai.firstreply.api;
 import ai.firstreply.api.model.*;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.http.*;
 
 import java.util.List;
@@ -37,6 +40,12 @@ public interface FirstReplyApi {
     Completable deleteContact(
             @Path("organizationId") String organizationId,
             @Path("contactId") String contactId);
+
+    @POST("/v1/organizations/{organizationId}/contacts/import")
+    Single<ContactImportResult> importContacts(
+            @Path("organizationId") String organizationId,
+            @Query("updateExisting") boolean updateExisting,
+            @Body RequestBody csv);
 
     @GET("/v1/organizations/{organizationId}/contactfields")
     Single<ContactFieldList> listContactFields(
@@ -171,6 +180,18 @@ public interface FirstReplyApi {
             @Path("organizationId") String organizationId,
             @Body MessageListParams params);
 
+    @POST("/v1/organizations/{organizationId}/messages/export")
+    Single<ResponseBody> exportMessages(
+            @Path("organizationId") String organizationId,
+            @Body MessageListParams params);
+
+    @Multipart
+    @POST("/v1/organizations/{organizationId}/attachment")
+    Single<MessageAttachment> uploadAttachment(
+            @Path("organizationId") String organizationId,
+            @Part MultipartBody.Part file,
+            @Part("fileSize") RequestBody fileSize);
+
     // ── Organizations ─────────────────────────────────────────────────────
 
     @GET("/v1/organizations")
@@ -276,6 +297,11 @@ public interface FirstReplyApi {
             @Path("id") String id,
             @Body Map<String, Object> channel);
 
+    @DELETE("/v1/organizations/{organizationId}/channels/{id}")
+    Completable deleteChannel(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
     @POST("/v1/organizations/{organizationId}/channels/oauth/init")
     Single<ChannelConnectResult> connectChannel(
             @Path("organizationId") String organizationId,
@@ -286,6 +312,17 @@ public interface FirstReplyApi {
             @Path("organizationId") String organizationId,
             @Path("id") String id,
             @Body ChannelReconnectRequest request);
+
+    @GET("/v1/organizations/{organizationId}/channels/{id}/oauth/status")
+    Single<ChannelOAuthStatus> getChannelOAuthStatus(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @POST("/v1/organizations/{organizationId}/channels/{id}/oauth/disconnect")
+    Completable disconnectChannelOAuth(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Query("revokeToken") boolean revokeToken);
 
     @POST("/v1/organizations/{organizationId}/channels/playstore/service-account")
     Single<PlayStoreServiceAccount> getPlayStoreServiceAccount(
@@ -389,6 +426,22 @@ public interface FirstReplyApi {
 
     @GET("/v1/organizations/{organizationId}/knowledge-sources/{id}")
     Single<KnowledgeSource> getKnowledgeSource(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id);
+
+    @POST("/v1/organizations/{organizationId}/knowledge-sources")
+    Single<KnowledgeSource> createKnowledgeSource(
+            @Path("organizationId") String organizationId,
+            @Body KnowledgeSourceCreate request);
+
+    @PUT("/v1/organizations/{organizationId}/knowledge-sources/{id}")
+    Single<KnowledgeSource> updateKnowledgeSource(
+            @Path("organizationId") String organizationId,
+            @Path("id") String id,
+            @Body KnowledgeSourceUpdate request);
+
+    @DELETE("/v1/organizations/{organizationId}/knowledge-sources/{id}")
+    Completable deleteKnowledgeSource(
             @Path("organizationId") String organizationId,
             @Path("id") String id);
 
@@ -625,6 +678,11 @@ public interface FirstReplyApi {
     Single<SocialPostWriteResult> writePost(
             @Path("organizationId") String organizationId,
             @Body SocialPostWriteRequest request);
+
+    @GET("/v1/organizations/{organizationId}/posts/statistics")
+    Single<SocialPostStatistics> getPostStatistics(
+            @Path("organizationId") String organizationId,
+            @Query("channelId") String channelId);
 
     @GET("/v1/organizations/{organizationId}/posts/analytics")
     Single<SocialAnalytics> getPostAnalytics(

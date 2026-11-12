@@ -8,12 +8,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Single;
 import okhttp3.ConnectionPool;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -121,6 +127,17 @@ public class FirstReplyService {
 
     public void deleteContact(String contactId) {
         execute(api.deleteContact(this.organizationId, contactId));
+    }
+
+    /**
+     * Imports contacts from CSV (RFC 4180, first row is the header). Columns, case-insensitive:
+     * email (required), firstname, lastname, name, phone, description.
+     *
+     * @param updateExisting update contacts that already exist (matched by email) instead of skipping them
+     */
+    public ContactImportResult importContacts(String csv, boolean updateExisting) {
+        RequestBody body = RequestBody.create(MediaType.parse("text/csv; charset=utf-8"), csv);
+        return execute(api.importContacts(this.organizationId, updateExisting, body));
     }
 
     public ContactFieldList listContactFields(String sort, String order, int page, int limit) {
@@ -250,6 +267,32 @@ public class FirstReplyService {
 
     public MessageList searchMessages(MessageListParams params) {
         return execute(api.searchMessages(this.organizationId, params));
+    }
+
+    /**
+     * Exports all matching messages as CSV. Takes the same filters as
+     * {@link #searchMessages(MessageListParams)}.
+     */
+    public String exportMessages(MessageListParams params) {
+        try (ResponseBody body = execute(api.exportMessages(this.organizationId, params))) {
+            return body.string();
+        } catch (IOException e) {
+            throw new FirstReplyException(0, e.getMessage());
+        }
+    }
+
+    /**
+     * Uploads a file to attach to a message: put the result into
+     * {@link MessageCreate#setAttachments(List)} of a reply. Images (JPEG, PNG, GIF, WebP), PDF,
+     * plain text, CSV, Word and Excel files of up to 50 MB.
+     *
+     * @param contentType MIME type of the file, e.g. {@code application/pdf}
+     */
+    public MessageAttachment uploadAttachment(File file, String contentType) {
+        MultipartBody.Part part = MultipartBody.Part.createFormData("file", file.getName(),
+                RequestBody.create(MediaType.parse(contentType), file));
+        RequestBody fileSize = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(file.length()));
+        return execute(api.uploadAttachment(this.organizationId, part, fileSize));
     }
 
     // ── Organizations ─────────────────────────────────────────────────────
@@ -389,6 +432,24 @@ public class FirstReplyService {
     }
 
     /** Conversation counts per channel. */
+    /** The state of the login of a channel that is connected on its platform. */
+    public ChannelOAuthStatus getChannelOAuthStatus(String channelId) {
+        return execute(api.getChannelOAuthStatus(this.organizationId, channelId));
+    }
+
+    /**
+     * Clears the stored login of the channel and deactivates it.
+     *
+     * @param revokeToken also revoke the token on the platform
+     */
+    public void disconnectChannelOAuth(String channelId, boolean revokeToken) {
+        execute(api.disconnectChannelOAuth(this.organizationId, channelId, revokeToken));
+    }
+
+    public void deleteChannel(String channelId) {
+        execute(api.deleteChannel(this.organizationId, channelId));
+    }
+
     public ChannelStatistics getChannelStatistics() {
         return execute(api.getChannelStatistics(this.organizationId));
     }
@@ -476,6 +537,19 @@ public class FirstReplyService {
 
     public KnowledgeSource getKnowledgeSource(String knowledgeSourceId) {
         return execute(api.getKnowledgeSource(this.organizationId, knowledgeSourceId));
+    }
+
+    public KnowledgeSource createKnowledgeSource(KnowledgeSourceCreate request) {
+        return execute(api.createKnowledgeSource(this.organizationId, request));
+    }
+
+    /** Updates a knowledge source; fields left {@code null} keep their value. */
+    public KnowledgeSource updateKnowledgeSource(String knowledgeSourceId, KnowledgeSourceUpdate request) {
+        return execute(api.updateKnowledgeSource(this.organizationId, knowledgeSourceId, request));
+    }
+
+    public void deleteKnowledgeSource(String knowledgeSourceId) {
+        execute(api.deleteKnowledgeSource(this.organizationId, knowledgeSourceId));
     }
 
     /** Starts a sync of the knowledge source; poll {@link #getKnowledgeSourceStatus(String)}. */
@@ -709,6 +783,15 @@ public class FirstReplyService {
      */
     public SocialPostWriteResult writePost(SocialPostWriteRequest request) {
         return execute(api.writePost(this.organizationId, request));
+    }
+
+    /**
+     * How many posts are drafts, waiting for approval, scheduled, published and failed right now.
+     *
+     * @param channelId only this channel, or {@code null} for all
+     */
+    public SocialPostStatistics getPostStatistics(String channelId) {
+        return execute(api.getPostStatistics(this.organizationId, channelId));
     }
 
     /**

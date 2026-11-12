@@ -9,8 +9,9 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
   per member and support metrics; hide, unhide, delete or like a comment of a
   comment thread and answer it privately
 - **Messages**: read, reply (sent, as a draft or as an internal note), edit
-  drafts, send drafts, search, delete
-- **Contacts**: search, create, read, update, delete; contact fields
+  drafts, send drafts, search, export as CSV, delete; upload attachments
+- **Contacts**: search, create, read, update, delete, import from CSV;
+  contact fields
 - **Organizations**: list, read, update, usage; members (list, invite, update,
   remove)
 - **Channels**: list, read, statistics, fetch new messages now, test the
@@ -18,19 +19,21 @@ built-in HTTPS enforcement, request retries, and automatic token refresh.
   chat, Bluesky, Telegram, App Store, Google Play), start or renew the login
   of an account that is connected on its platform (Facebook Page, Instagram,
   LinkedIn, WhatsApp, Threads, X, TikTok, YouTube, Google Business Profile,
-  Mastodon), change a channel's settings, the Google Play service account
-  and what a TikTok account may post
+  Mastodon), read the state of that login or disconnect it, change a
+  channel's settings, delete a channel, the Google Play service account and
+  what a TikTok account may post
 - **Classifications**: list, create, read, update, delete with reassignment,
   impact, statistics
 - **Knowledge base**: search, create, read, update, delete; knowledge sources
-  (list, read, sync, sync status)
+  (list, create, read, update, delete, sync, sync status)
 - **AI**: draft a reply for a conversation, free prompt, translate, test a
   message against the classifications
 - **Search** across conversations, contacts, knowledge and messages
 - **Social posts**: list, draft, schedule, edit, publish now, approve, retry a
   failed channel, delete (optionally on the platforms too); write, shorten
   or rewrite a text with AI; media uploads, the comment threads of a post,
-  metric snapshots per post and publishing analytics. Webhooks receive
+  metric snapshots per post, post counts per state and publishing analytics.
+  Webhooks receive
   `post.create`, `post.update` (status changes, including published and
   failed) and `post.delete`
 - **Templates, prompts, webhooks and saved filters**: list, create, read,
