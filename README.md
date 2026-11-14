@@ -107,6 +107,11 @@ A key only reaches its own organization: `listOrganizations` returns just
 that organization, and calls for other organizations, `createOrganization`
 and `searchOrganizations` are refused with 403. Those need a user token.
 
+A key works with the organization's data, not with the account itself:
+inviting, changing and removing members, creating and deleting API keys,
+deleting the organization and the billing portal are refused with 403 too and
+need a user token.
+
 Alternatively, authenticate a user with `login()` and use the returned JWT
 with a `TokenStore` for automatic refresh on 401. Refresh tokens are rotated:
 `refresh()` revokes the token it was given, so keep the `refreshToken` of its
